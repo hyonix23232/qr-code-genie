@@ -57,7 +57,7 @@ app.get('/', (req, res) => {
   const host = req.query.host
   if (shop && host) {
     const sid = shopify.session.getOfflineId(shop)
-    if (!sessions.has(sid)) return res.redirect(`/auth?shop=${encodeURIComponent(shop)}&host=${encodeURIComponent(host)}`)
+    if (!sessions.has(sid)) return res.redirect(`/auth?shop=${encodeURIComponent(shop)}`)
   }
   serveIndex(req, res)
 })
@@ -65,7 +65,6 @@ app.get('/', (req, res) => {
 app.get('/auth', async (req, res) => {
   const shop = req.query.shop
   if (!shop) return res.status(400).send('Missing shop')
-  console.log(`[AUTH] Starting OAuth for shop: ${shop}, host: ${req.query.host}`)
   try {
     await shopify.auth.begin({ shop, callbackPath: '/auth/callback', isOnline: false, rawRequest: req, rawResponse: res })
   } catch (err) {
@@ -76,14 +75,12 @@ app.get('/auth', async (req, res) => {
 
 app.get('/auth/callback', async (req, res) => {
   try {
-    console.log('[AUTH_CALLBACK] Received, query params:', JSON.stringify(req.query))
     const { session } = await shopify.auth.callback({ rawRequest: req, rawResponse: res })
-    console.log('[AUTH_CALLBACK] Success for shop:', session.shop)
     const sid = shopify.session.getOfflineId(session.shop)
     sessions.set(sid, session)
     const host = req.query.host || ''
-    const returnUrl = `/?host=${encodeURIComponent(host)}&shop=${encodeURIComponent(session.shop)}`
-    console.log('[AUTH_CALLBACK] Redirecting to:', returnUrl)
+    const shop = encodeURIComponent(session.shop)
+    const returnUrl = host ? `/?host=${encodeURIComponent(host)}&shop=${shop}` : `/?shop=${shop}`
     res.redirect(returnUrl)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
