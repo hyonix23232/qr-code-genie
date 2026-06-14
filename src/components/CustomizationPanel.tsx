@@ -1,3 +1,4 @@
+import { Text, BlockStack, InlineStack, Select, Badge } from '@shopify/polaris'
 import LogoUploader from './LogoUploader'
 
 type DotType = 'square' | 'dots' | 'rounded' | 'extra-rounded'
@@ -17,17 +18,26 @@ interface Props {
   isPro: boolean
 }
 
-const dotStyles: { value: DotType; label: string; pro: boolean }[] = [
-  { value: 'square', label: 'Square', pro: false },
-  { value: 'dots', label: 'Dots', pro: true },
-  { value: 'rounded', label: 'Rounded', pro: false },
-  { value: 'extra-rounded', label: 'Extra Rounded', pro: true },
+const colorPresets = [
+  { label: 'Midnight', fg: '#000000', bg: '#ffffff' },
+  { label: 'Ocean', fg: '#1e3a5f', bg: '#e8f0fe' },
+  { label: 'Forest', fg: '#2d6a4f', bg: '#d8f3dc' },
+  { label: 'Sunset', fg: '#d62828', bg: '#fef0ef' },
+  { label: 'Royal', fg: '#6c1d8a', bg: '#f3e8ff' },
+  { label: 'Minimal', fg: '#333333', bg: '#f5f5f5' },
 ]
 
-const cornerStyles: { value: CornerType; label: string; pro: boolean }[] = [
-  { value: 'square', label: 'Square', pro: false },
-  { value: 'dot', label: 'Dot', pro: true },
-  { value: 'extra-rounded', label: 'Rounded', pro: true },
+const dotStyleOptions = [
+  { label: 'Square', value: 'square' },
+  { label: 'Rounded', value: 'rounded' },
+  { label: 'Dots', value: 'dots' },
+  { label: 'Extra Rounded', value: 'extra-rounded' },
+]
+
+const cornerStyleOptions = [
+  { label: 'Square', value: 'square' },
+  { label: 'Dot', value: 'dot' },
+  { label: 'Extra Rounded', value: 'extra-rounded' },
 ]
 
 export default function CustomizationPanel({
@@ -36,96 +46,94 @@ export default function CustomizationPanel({
   onLogoUpload, logoFile, isPro,
 }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
-      <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Customize</h2>
+    <BlockStack gap="400">
+      <InlineStack align="space-between" blockAlign="center">
+        <Text as="h2" variant="headingMd">
+          Customize
+        </Text>
+        {isPro && <Badge tone="success">Pro</Badge>}
+      </InlineStack>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1.5">Foreground Color</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={fgColor}
-              onChange={(e) => onFgColorChange(e.target.value)}
-              className="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
-            />
-            <span className="text-xs text-gray-500 font-mono">{fgColor}</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-600 mb-1.5">Background Color</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={bgColor}
-              onChange={(e) => onBgColorChange(e.target.value)}
-              className="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
-            />
-            <span className="text-xs text-gray-500 font-mono">{bgColor}</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm text-gray-600 mb-1.5">
-          Dot Style
-          {!isPro && dotStyle !== 'square' && dotStyle !== 'rounded' && (
-            <span className="text-purple-500 text-xs ml-1">(Pro)</span>
-          )}
-        </label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {dotStyles.map((s) => (
+      <BlockStack gap="200">
+        <Text as="h3" variant="headingSm" tone="subdued">
+          Color Presets
+        </Text>
+        <div className="flex flex-wrap gap-2">
+          {colorPresets.map((p) => (
             <button
-              key={s.value}
-              onClick={() => { if (isPro || !s.pro) onDotStyleChange(s.value) }}
-              disabled={!isPro && s.pro}
-              className={`px-3 py-2 text-xs font-medium rounded-lg border transition-all ${
-                dotStyle === s.value
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
-                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
-              } ${!isPro && s.pro ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              key={p.label}
+              type="button"
+              onClick={() => { onFgColorChange(p.fg); onBgColorChange(p.bg) }}
+              title={p.label}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium hover:border-gray-400 transition-colors cursor-pointer"
+              style={{
+                borderColor: fgColor === p.fg && bgColor === p.bg ? p.fg : undefined,
+                backgroundColor: p.bg,
+                color: p.fg,
+              }}
             >
-              {s.label}
-              {!isPro && s.pro && ' 🔒'}
+              <span
+                className="w-3 h-3 rounded-full inline-block"
+                style={{ backgroundColor: p.fg }}
+              />
+              {p.label}
             </button>
           ))}
         </div>
-      </div>
+      </BlockStack>
 
-      <div>
-        <label className="block text-sm text-gray-600 mb-1.5">
-          Corner Style
-          {!isPro && (
-            <span className="text-purple-500 text-xs ml-1">(Pro)</span>
-          )}
-        </label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {cornerStyles.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => { if (isPro || !s.pro) onCornerStyleChange(s.value) }}
-              disabled={!isPro && s.pro}
-              className={`px-3 py-2 text-xs font-medium rounded-lg border transition-all ${
-                cornerStyle === s.value
-                  ? 'border-purple-500 bg-purple-50 text-purple-700'
-                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
-              } ${!isPro && s.pro ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              {s.label}
-              {!isPro && s.pro && ' 🔒'}
-            </button>
-          ))}
-        </div>
-      </div>
+      <BlockStack gap="200">
+        <Text as="h3" variant="headingSm" tone="subdued">
+          Colors
+        </Text>
+        <InlineStack gap="400" wrap={false}>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Foreground</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={fgColor}
+                onChange={(e) => onFgColorChange(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
+              />
+              <span className="text-xs text-gray-400 font-mono">{fgColor}</span>
+            </div>
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 mb-1">Background</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => onBgColorChange(e.target.value)}
+                className="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
+              />
+              <span className="text-xs text-gray-400 font-mono">{bgColor}</span>
+            </div>
+          </div>
+        </InlineStack>
+      </BlockStack>
 
-      <div>
-        <label className="block text-sm text-gray-600 mb-1.5">
+      <Select
+        label="Dot Style"
+        value={dotStyle}
+        onChange={(v) => onDotStyleChange(v as DotType)}
+        options={dotStyleOptions}
+      />
+
+      <Select
+        label="Corner Style"
+        value={cornerStyle}
+        onChange={(v) => onCornerStyleChange(v as CornerType)}
+        options={cornerStyleOptions}
+      />
+
+      <BlockStack gap="200">
+        <Text as="h3" variant="headingSm" tone="subdued">
           Logo
-          {!isPro && <span className="text-purple-500 text-xs ml-1">(Pro)</span>}
-        </label>
+        </Text>
         <LogoUploader onUpload={onLogoUpload} logoFile={logoFile} isPro={isPro} />
-      </div>
-    </div>
+      </BlockStack>
+    </BlockStack>
   )
 }

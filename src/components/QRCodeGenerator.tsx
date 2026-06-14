@@ -1,4 +1,5 @@
 import { RefObject } from 'react'
+import { TextField, Button, ButtonGroup, Text, BlockStack, InlineStack } from '@shopify/polaris'
 
 interface Props {
   url: string
@@ -16,45 +17,48 @@ export default function QRCodeGenerator({
   isPro,
 }: Props) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        URL or Text
-      </label>
-      <input
-        type="text"
+    <BlockStack gap="400">
+      <Text as="h2" variant="headingMd">
+        QR Code
+      </Text>
+
+      <TextField
+        label="URL or Text"
         value={url}
-        onChange={(e) => onUrlChange(e.target.value)}
+        onChange={onUrlChange}
         placeholder="https://example.com"
-        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+        autoComplete="off"
+        clearButton
+        onClearButtonClick={() => onUrlChange('')}
       />
 
-      <div className="mt-6 flex flex-col items-center">
+      <BlockStack align="center" gap="300">
         <div
           ref={qrContainerRef}
-          className="flex items-center justify-center w-[300px] h-[300px] bg-white rounded-xl border border-gray-100"
+          className="flex items-center justify-center w-[340px] h-[340px] bg-white rounded-xl border border-gray-100 shadow-sm"
         />
         {!url && (
-          <p className="text-xs text-gray-400 mt-2">Enter a URL above to generate</p>
+          <Text as="p" variant="bodySm" tone="subdued">
+            Enter a URL above to generate
+          </Text>
         )}
-      </div>
+      </BlockStack>
 
-      <div className="mt-6 flex gap-2 justify-center">
-        <button
+      <ButtonGroup fullWidth>
+        <Button
           onClick={() => onDownload('png')}
           disabled={!url}
-          className="px-5 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          variant="primary"
         >
           Download PNG
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => onDownload('svg')}
           disabled={!url || !isPro}
-          title={!isPro ? 'Pro feature' : ''}
-          className="px-5 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          SVG {!isPro && '(Pro)'}
-        </button>
-      </div>
-    </div>
+          {isPro ? 'Download SVG' : 'SVG (Pro)'}
+        </Button>
+      </ButtonGroup>
+    </BlockStack>
   )
 }

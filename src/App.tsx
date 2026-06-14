@@ -1,5 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import QRCodeStyling from 'qr-code-styling'
+import {
+  Page,
+  Layout,
+  Card,
+  Text,
+  BlockStack,
+  InlineGrid,
+  Frame,
+  Toast,
+} from '@shopify/polaris'
 import QRCodeGenerator from './components/QRCodeGenerator'
 import CustomizationPanel from './components/CustomizationPanel'
 import ShopifyIntegration from './components/ShopifyIntegration'
@@ -15,9 +25,10 @@ export default function App() {
   const [cornerStyle, setCornerStyle] = useState<CornerType>('square')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
-  const [isPro, setIsPro] = useState(false)
+  const [isPro] = useState(true)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
+  const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null)
   const qrRef = useRef<QRCodeStyling | null>(null)
   const qrContainerRef = useRef<HTMLDivElement>(null)
 
@@ -25,8 +36,8 @@ export default function App() {
     if (!qrContainerRef.current) return
     qrContainerRef.current.innerHTML = ''
     const qr = new QRCodeStyling({
-      width: 280,
-      height: 280,
+      width: 320,
+      height: 320,
       data: url || 'https://',
       dotsOptions: { color: fgColor, type: dotStyle },
       cornersSquareOptions: { color: fgColor, type: cornerStyle },
@@ -64,10 +75,6 @@ export default function App() {
     if (shopParam) setShop(shopParam)
   }, [])
 
-  useEffect(() => {
-    setIsPro(true)
-  }, [])
-
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file)
     const reader = new FileReader()
@@ -76,77 +83,87 @@ export default function App() {
   }, [])
 
   const handleDownload = useCallback(async (extension: 'png' | 'svg') => {
-    if (!url) return
+    if (!url) {
+      setToast({ message: 'Enter a URL first', error: true })
+      return
+    }
     const canvas = qrContainerRef.current?.querySelector('canvas')
     if (!canvas) return
     if (extension === 'svg') {
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280"><foreignObject width="280" height="280"><img src="${canvas.toDataURL()}"/></foreignObject></svg>`
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320"><foreignObject width="320" height="320"><img src="${canvas.toDataURL()}"/></foreignObject></svg>`
       const blob = new Blob([svg], { type: 'image/svg+xml' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = 'qr-code.svg'
       a.click()
       URL.revokeObjectURL(a.href)
-      return
+    } else {
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = 'qr-code.png'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(a.href)
+      }, 'image/png')
     }
-    canvas.toBlob((blob) => {
-      if (!blob) return
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = 'qr-code.png'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(a.href)
-    }, 'image/png')
-  }, [url, fgColor, bgColor, dotStyle, cornerStyle, logoDataUrl, isPro])
+    setToast({ message: `QR code downloaded as ${extension.toUpperCase()}` })
+  }, [url])
+
+  const toastMarkup = toast ? (
+    <Toast
+      content={toast.message}
+      error={toast.error}
+      onDismiss={() => setToast(null)}
+    />
+  ) : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {isEmbedded && (
-        <ShopifyIntegration
-          shop={shop}
-          onSelectProduct={(productUrl) => setUrl(productUrl)}
-        />
-      )}
-
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {!isEmbedded && (
-          <header className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">QR Code Genie</h1>
-            <p className="text-gray-500 mt-1">Generate beautiful QR codes in seconds</p>
-          </header>
-        )}
-
-
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3 space-y-6">
-            <QRCodeGenerator
-              url={url}
-              onUrlChange={setUrl}
-              qrContainerRef={qrContainerRef}
-              onDownload={handleDownload}
-              isPro={isPro}
+    <Frame>
+      <Page
+        title="QR Code Genie"
+        subtitle="Generate beautiful QR codes in seconds"
+      >
+        <BlockStack gap="500">
+          {isEmbedded && (
+            <ShopifyIntegration
+              shop={shop}
+              onSelectProduct={(productUrl) => setUrl(productUrl)}
             />
-          </div>
-          <div className="lg:col-span-2">
-            <CustomizationPanel
-              fgColor={fgColor}
-              bgColor={bgColor}
-              dotStyle={dotStyle}
-              cornerStyle={cornerStyle}
-              onFgColorChange={setFgColor}
-              onBgColorChange={setBgColor}
-              onDotStyleChange={setDotStyle}
-              onCornerStyleChange={setCornerStyle}
-              onLogoUpload={handleLogoUpload}
-              logoFile={logoFile}
-              isPro={isPro}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+          )}
+
+          <InlineGrid columns={{ xs: 1, md: 2 }} gap="500">
+            <Card>
+              <QRCodeGenerator
+                url={url}
+                onUrlChange={setUrl}
+                qrContainerRef={qrContainerRef}
+                onDownload={handleDownload}
+                isPro={isPro}
+              />
+            </Card>
+
+            <Card>
+              <CustomizationPanel
+                fgColor={fgColor}
+                bgColor={bgColor}
+                dotStyle={dotStyle}
+                cornerStyle={cornerStyle}
+                onFgColorChange={setFgColor}
+                onBgColorChange={setBgColor}
+                onDotStyleChange={setDotStyle}
+                onCornerStyleChange={setCornerStyle}
+                onLogoUpload={handleLogoUpload}
+                logoFile={logoFile}
+                isPro={isPro}
+              />
+            </Card>
+          </InlineGrid>
+        </BlockStack>
+      </Page>
+      {toastMarkup}
+    </Frame>
   )
 }

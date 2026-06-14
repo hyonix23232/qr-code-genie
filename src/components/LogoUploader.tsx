@@ -1,4 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { Text, Icon } from '@shopify/polaris'
+import { ImageIcon, XCircleIcon } from '@shopify/polaris-icons'
 
 interface Props {
   onUpload: (file: File) => void
@@ -8,11 +10,23 @@ interface Props {
 
 export default function LogoUploader({ onUpload, logoFile, isPro }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [dragging, setDragging] = useState(false)
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file && ['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
+      onUpload(file)
+    }
+  }
 
   if (!isPro) {
     return (
-      <div className="p-3 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
-        <p className="text-xs text-gray-400">Upgrade to Pro to upload a logo</p>
+      <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center">
+        <Text as="p" variant="bodySm" tone="subdued">
+          Upgrade to Pro to upload a logo
+        </Text>
       </div>
     )
   }
@@ -29,27 +43,60 @@ export default function LogoUploader({ onUpload, logoFile, isPro }: Props) {
         }}
         className="hidden"
       />
-      <button
-        onClick={() => inputRef.current?.click()}
-        className="w-full p-3 bg-gray-50 rounded-lg border border-dashed border-gray-200 text-center hover:bg-gray-100 transition-colors cursor-pointer"
-      >
-        {logoFile ? (
-          <div className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-xs text-gray-600 truncate max-w-[140px]">{logoFile.name}</span>
+
+      {logoFile ? (
+        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+          <div className="w-10 h-10 rounded-lg bg-white border border-green-200 flex items-center justify-center overflow-hidden">
+            <img
+              src={URL.createObjectURL(logoFile)}
+              alt=""
+              className="max-w-full max-h-full object-contain"
+            />
           </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1">
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-xs text-gray-400">Click to upload logo</span>
-            <span className="text-xs text-gray-300">PNG, JPG, SVG</span>
+          <div className="flex-1 min-w-0">
+            <Text as="p" variant="bodySm" fontWeight="semibold">
+              {logoFile.name}
+            </Text>
+            <Text as="p" variant="bodyXs" tone="subdued">
+              {(logoFile.size / 1024).toFixed(1)} KB
+            </Text>
           </div>
-        )}
-      </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (inputRef.current) inputRef.current.value = ''
+              onUpload(new File([], ''))
+
+            }}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+          >
+            <Icon source={XCircleIcon} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          className={`w-full p-5 rounded-lg border-2 border-dashed text-center transition-all cursor-pointer ${
+            dragging
+              ? 'border-purple-400 bg-purple-50'
+              : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
+          }`}
+        >
+          <div className="flex flex-col items-center gap-2">
+            <Icon source={ImageIcon} tone="base" />
+            <Text as="p" variant="bodySm" tone="subdued">
+              Click to upload logo
+            </Text>
+            <Text as="p" variant="bodyXs" tone="subdued">
+              PNG, JPG or SVG
+            </Text>
+          </div>
+        </button>
+      )}
     </div>
   )
 }
