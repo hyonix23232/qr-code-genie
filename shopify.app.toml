@@ -1,7 +1,11 @@
 name = "QR Code Genie"
+handle = "qr-code-genie"
 client_id = "b611ddde7cc8dba7f48ee694f3ee7dde"
 application_url = "https://qr-code-genie-production.up.railway.app"
 embedded = true
+
+[access_scopes]
+scopes = "read_products,write_products"
 
 [auth]
 redirect_urls = ["https://qr-code-genie-production.up.railway.app/auth/callback"]
