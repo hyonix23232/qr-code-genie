@@ -145,6 +145,12 @@ app.get('/api/billing/check', async (req, res) => {
   }
 })
 
+app.get('/privacy', (req, res) => {
+  const filePath = path.join(__dirname, '..', 'dist', 'privacy.html')
+  if (fs.existsSync(filePath)) res.sendFile(filePath)
+  else res.status(404).send('Not found')
+})
+
 app.get('*', serveIndex)
 
 const listenPort = PORT || 3001
