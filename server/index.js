@@ -117,7 +117,7 @@ app.get('/api/billing/create', async (req, res) => {
       session,
       plan: 'Pro Plan',
       isTest: true,
-      returnUrl: `${SHOPIFY_APP_URL}/?shop=${shop}`,
+      returnUrl: `${SHOPIFY_APP_URL}/?shop=${shop}&host=${req.query.host || ''}`,
     })
     res.json({ confirmationUrl: result.confirmationUrl })
   } catch (err) {

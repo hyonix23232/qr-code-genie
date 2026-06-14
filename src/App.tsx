@@ -123,7 +123,7 @@ export default function App() {
       const res = await fetch(`/api/billing/create?shop=${shop}`)
       const data = await res.json()
       if (data.confirmationUrl) {
-        window.open(data.confirmationUrl, '_blank')
+        window.top.location.href = data.confirmationUrl
       } else {
         alert('Could not create billing. Check console for details.')
         console.error('Billing response:', data)
