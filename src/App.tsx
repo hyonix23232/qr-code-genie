@@ -122,10 +122,11 @@ export default function App() {
     try {
       const res = await fetch(`/api/billing/create?shop=${shop}`)
       const data = await res.json()
+      console.log('Billing response:', { status: res.status, data })
       if (data.confirmationUrl) {
         window.top.location.href = data.confirmationUrl
       } else {
-        alert('Could not create billing. Check console for details.')
+        alert(`Billing error: ${data.error || 'Unknown'} (status ${res.status})`)
         console.error('Billing response:', data)
       }
     } catch (err) {
