@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import '@shopify/shopify-api/adapters/node'
-import { shopifyApi, ApiVersion, LogSeverity, BillingInterval, BillingReplacementBehavior } from '@shopify/shopify-api'
+import { shopifyApi, ApiVersion, LogSeverity } from '@shopify/shopify-api'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,12 +12,12 @@ console.log('=== DEBUG ENV ===')
 console.log('SHOPIFY_API_KEY:', process.env.SHOPIFY_API_KEY ? 'SET (length: ' + process.env.SHOPIFY_API_KEY.length + ')' : 'NOT SET')
 console.log('SHOPIFY_API_SECRET:', process.env.SHOPIFY_API_SECRET ? 'SET (length: ' + process.env.SHOPIFY_API_SECRET.length + ')' : 'NOT SET')
 console.log('SHOPIFY_APP_URL:', process.env.SHOPIFY_APP_URL || 'NOT SET')
+console.log('SHOPIFY_APP_HANDLE:', process.env.SHOPIFY_APP_HANDLE || 'qr-code-genie (default)')
 console.log('SCOPES:', process.env.SCOPES || 'NOT SET')
 console.log('PORT:', process.env.PORT || 'NOT SET')
-console.log('All env keys:', Object.keys(process.env).sort().join(', '))
 console.log('=== END DEBUG ===')
 
-const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SCOPES, PORT } = process.env
+const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT } = process.env
 
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
@@ -35,15 +35,6 @@ const shopify = shopifyApi({
   apiVersion: ApiVersion.July25,
   isEmbeddedApp: true,
   logLevel: LogSeverity.Warning,
-  billing: {
-    'Pro Plan': {
-      amount: 5,
-      currencyCode: 'USD',
-      interval: BillingInterval.Every30Days,
-      replacementBehavior: BillingReplacementBehavior.ApplyImmediately,
-      trialDays: 3,
-    },
-  },
 })
 
 const app = express()
@@ -87,7 +78,7 @@ app.get('/auth/callback', async (req, res) => {
 })
 
 app.get('/api/config', (req, res) => {
-  res.json({ apiKey: SHOPIFY_API_KEY })
+  res.json({ apiKey: SHOPIFY_API_KEY, appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie' })
 })
 
 app.get('/api/products', async (req, res) => {
@@ -103,45 +94,6 @@ app.get('/api/products', async (req, res) => {
   } catch (err) {
     console.error('Products error:', err)
     res.status(500).json({ error: 'Failed to fetch products' })
-  }
-})
-
-app.get('/api/billing/create', async (req, res) => {
-  const { shop } = req.query
-  if (!shop) return res.status(400).json({ error: 'Missing shop' })
-  const sid = shopify.session.getOfflineId(shop)
-  const session = sessions.get(sid)
-  if (!session) return res.status(401).json({ error: 'App not installed' })
-  try {
-    const result = await shopify.billing.request({
-      session,
-      plan: 'Pro Plan',
-      isTest: true,
-      returnUrl: `${SHOPIFY_APP_URL}/?shop=${shop}&host=${req.query.host || ''}`,
-    })
-    res.json({ confirmationUrl: result.confirmationUrl })
-  } catch (err) {
-    console.error('Billing create error:', err)
-    res.status(500).json({ error: 'Failed to create billing' })
-  }
-})
-
-app.get('/api/billing/confirm', async (req, res) => {
-  const { shop } = req.query
-  res.redirect(`/?shop=${shop || ''}`)
-})
-
-app.get('/api/billing/check', async (req, res) => {
-  const { shop } = req.query
-  if (!shop) return res.json({ active: false })
-  const sid = shopify.session.getOfflineId(shop)
-  const session = sessions.get(sid)
-  if (!session) return res.json({ active: false })
-  try {
-    const active = await shopify.billing.check({ session, plans: ['Pro Plan'] })
-    res.json({ active })
-  } catch {
-    res.json({ active: false })
   }
 })
 

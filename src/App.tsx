@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import QRCodeStyling from 'qr-code-styling'
 import {
   Page,
-  Layout,
   Card,
   Text,
   BlockStack,
@@ -10,6 +9,8 @@ import {
   InlineStack,
   Frame,
   Toast,
+  Button,
+  Banner,
 } from '@shopify/polaris'
 import QRCodeGenerator from './components/QRCodeGenerator'
 import CustomizationPanel from './components/CustomizationPanel'
@@ -27,9 +28,10 @@ export default function App() {
   const [cornerStyle, setCornerStyle] = useState<CornerType>('square')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
-  const [isPro] = useState(true)
+  const [isPro, setIsPro] = useState(false)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
+  const [appHandle, setAppHandle] = useState('qr-code-genie')
   const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null)
   const qrRef = useRef<QRCodeStyling | null>(null)
   const qrContainerRef = useRef<HTMLDivElement>(null)
@@ -73,8 +75,17 @@ export default function App() {
     const params = new URLSearchParams(window.location.search)
     const host = params.get('host')
     const shopParam = params.get('shop')
+    const plan = params.get('plan_handle')
     if (host) setIsEmbedded(true)
     if (shopParam) setShop(shopParam)
+    if (plan === 'pro') setIsPro(true)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((data) => { if (data.appHandle) setAppHandle(data.appHandle) })
+      .catch(() => {})
   }, [])
 
   const handleLogoUpload = useCallback((file: File) => {
@@ -114,6 +125,8 @@ export default function App() {
     setToast({ message: `QR code downloaded as ${extension.toUpperCase()}` })
   }, [url])
 
+  const pricingUrl = shop ? `https://${shop.replace('https://', '').replace('http://', '')}/admin/apps/${appHandle}/pricing` : '#'
+
   const toastMarkup = toast ? (
     <Toast
       content={toast.message}
@@ -139,6 +152,22 @@ export default function App() {
               shop={shop}
               onSelectProduct={(productUrl) => setUrl(productUrl)}
             />
+          )}
+
+          {!isPro && shop && (
+            <Banner tone="info">
+              <InlineStack gap="300" blockAlign="center" wrap={false}>
+                <Text as="span" variant="bodyMd">
+                  Upgrade to Pro to unlock custom styles, logo upload, and SVG export — just $5/month.
+                </Text>
+                <Button
+                  variant="primary"
+                  onClick={() => { window.top.location.href = pricingUrl }}
+                >
+                  Upgrade Now
+                </Button>
+              </InlineStack>
+            </Banner>
           )}
 
           <InlineGrid columns={{ xs: 1, md: 2 }} gap="500">
