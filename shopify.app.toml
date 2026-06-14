@@ -1,0 +1,22 @@
+name = "QR Code Genie"
+client_id = "b611ddde7cc8dba7f48ee694f3ee7dde"
+application_url = "https://qr-code-genie-production.up.railway.app"
+embedded = true
+
+[auth]
+redirect_urls = ["https://qr-code-genie-production.up.railway.app/auth/callback"]
+
+[webhooks]
+api_version = "2026-04"
+
+[[webhooks.subscriptions]]
+uri = "https://qr-code-genie-production.up.railway.app/webhooks/customers/data_request"
+compliance_topics = ["customers/data_request"]
+
+[[webhooks.subscriptions]]
+uri = "https://qr-code-genie-production.up.railway.app/webhooks/customers/redact"
+compliance_topics = ["customers/redact"]
+
+[[webhooks.subscriptions]]
+uri = "https://qr-code-genie-production.up.railway.app/webhooks/shop/redact"
+compliance_topics = ["shop/redact"]

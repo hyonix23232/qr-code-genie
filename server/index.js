@@ -1,5 +1,6 @@
 import express from 'express'
 import compression from 'compression'
+import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -39,7 +40,7 @@ const shopify = shopifyApi({
 
 const app = express()
 app.use(compression())
-app.use(express.json())
+app.use(express.json({ verify: (req, _, buf) => { req.rawBody = buf } }))
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'dist', 'assets')))
 
@@ -97,9 +98,25 @@ app.get('/api/products', async (req, res) => {
   }
 })
 
-app.post('/webhooks/customers/data_request', (req, res) => { res.status(200).end() })
-app.post('/webhooks/customers/redact', (req, res) => { res.status(200).end() })
-app.post('/webhooks/shop/redact', (req, res) => { res.status(200).end() })
+function verifyHmac(req, res) {
+  const hmac = req.get('X-Shopify-Hmac-SHA256')
+  if (!hmac) return false
+  const computed = crypto.createHmac('sha256', SHOPIFY_API_SECRET).update(req.rawBody).digest('base64')
+  return hmac === computed
+}
+
+app.post('/webhooks/customers/data_request', (req, res) => {
+  if (!verifyHmac(req, res)) return res.status(401).end()
+  res.status(200).end()
+})
+app.post('/webhooks/customers/redact', (req, res) => {
+  if (!verifyHmac(req, res)) return res.status(401).end()
+  res.status(200).end()
+})
+app.post('/webhooks/shop/redact', (req, res) => {
+  if (!verifyHmac(req, res)) return res.status(401).end()
+  res.status(200).end()
+})
 
 app.get('/privacy', (req, res) => {
   res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy - QR Code Genie</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}h1{color:#111}</style></head><body><h1>Privacy Policy</h1><p><strong>QR Code Genie</strong> respects your privacy.</p><h2>Data We Collect</h2><ul><li>Shop information (store name and domain for authentication)</li><li>QR code content (URLs or text you enter)</li></ul><h2>How We Use Data</h2><p>We use your data solely to provide QR code generation and product linking.</p><h2>Data Storage</h2><p>We do not permanently store QR code images or generated content. Session data is stored temporarily for authentication.</p><h2>Third-Party Services</h2><p>We do not share, sell, or transfer your data to third parties.</p><h2>Contact</h2><p>Email: myhyonix1@hotmail.com</p><p>Last updated: June 14, 2026</p></body></html>`)
