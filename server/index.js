@@ -136,11 +136,16 @@ app.get('/api/products', async (req, res) => {
   try {
     const client = new shopify.clients.Rest({ session })
     const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
-    res.json(response.body)
+    res.json(response.body.products ? response.body : { products: response.body })
   } catch (err) {
-    console.error('Products error:', err.message, err.stack)
-    res.status(500).json({ error: 'Failed to fetch products', detail: err.message })
+    console.error('Products error:', err.message, err.stack?.slice(0, 1000))
+    res.status(500).json({ error: 'Failed to fetch products' })
   }
+})
+
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err)
+  res.status(500).json({ error: 'Internal error' })
 })
 
 function verifyHmac(req, res) {
