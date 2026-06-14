@@ -18,8 +18,6 @@ export default function App() {
   const [isPro, setIsPro] = useState(false)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
-  const [billingLoading, setBillingLoading] = useState(false)
-
   const qrRef = useRef<QRCodeStyling | null>(null)
   const qrContainerRef = useRef<HTMLDivElement>(null)
 
@@ -72,16 +70,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    async function checkBilling() {
-      if (!shop) return
-      try {
-        const res = await fetch(`/api/billing/check?shop=${shop}`)
-        const data = await res.json()
-        if (data.active) setIsPro(true)
-      } catch {}
-    }
-    checkBilling()
-  }, [shop])
+    setIsPro(true)
+  }, [])
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file)
@@ -116,27 +106,6 @@ export default function App() {
     }, 'image/png')
   }, [url, fgColor, bgColor, dotStyle, cornerStyle, logoDataUrl, isPro])
 
-  const handleUpgrade = useCallback(async () => {
-    if (!shop) return
-    setBillingLoading(true)
-    try {
-      const res = await fetch(`/api/billing/create?shop=${shop}`)
-      const data = await res.json()
-      console.log('Billing response:', { status: res.status, data })
-      if (data.confirmationUrl) {
-        window.top.location.href = data.confirmationUrl
-      } else {
-        alert(`Billing error: ${data.error || 'Unknown'} (status ${res.status})`)
-        console.error('Billing response:', data)
-      }
-    } catch (err) {
-      console.error('Billing error:', err)
-      alert('Upgrade failed. Check console for details.')
-    } finally {
-      setBillingLoading(false)
-    }
-  }, [shop])
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {isEmbedded && (
@@ -154,20 +123,7 @@ export default function App() {
           </header>
         )}
 
-        {!isPro && shop && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl text-center">
-            <p className="text-sm text-purple-700">
-              Upgrade to <strong>Pro</strong> &mdash; unlock logo upload, custom styles, and high-res downloads for just <strong>$5/month</strong>
-            </p>
-            <button
-              onClick={handleUpgrade}
-              disabled={billingLoading}
-              className="mt-2 px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {billingLoading ? 'Loading...' : 'Upgrade Now'}
-            </button>
-          </div>
-        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3 space-y-6">
