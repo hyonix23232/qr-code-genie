@@ -84,7 +84,7 @@ app.get('/auth/callback', async (req, res) => {
     res.redirect(returnUrl)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
-    res.status(500).send('Auth callback failed')
+    res.status(500).send(`Auth callback failed: ${err.message}`)
   }
 })
 
