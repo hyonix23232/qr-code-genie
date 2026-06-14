@@ -48,12 +48,11 @@ function validateSessionToken(req, res, next) {
   if (!auth || !auth.startsWith('Bearer ')) return next()
   try {
     const payload = jwt.verify(auth.slice(7), SHOPIFY_API_SECRET, { algorithms: ['HS256'] })
+    if (payload.aud !== SHOPIFY_API_KEY) return next()
     req.shop = payload.dest.replace('https://', '')
     const sid = shopify.session.getOfflineId(req.shop)
     req.session = sessions.get(sid)
-    req.scope = 'user'
   } catch {
-    // Token invalid, continue without session
   }
   next()
 }
