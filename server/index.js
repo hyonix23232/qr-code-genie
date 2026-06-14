@@ -138,8 +138,8 @@ app.get('/api/products', async (req, res) => {
     const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
     res.json(response.body)
   } catch (err) {
-    console.error('Products error:', err)
-    res.status(500).json({ error: 'Failed to fetch products' })
+    console.error('Products error:', err.message, err.stack)
+    res.status(500).json({ error: 'Failed to fetch products', detail: err.message })
   }
 })
 
