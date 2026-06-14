@@ -132,14 +132,14 @@ app.get('/api/products', async (req, res) => {
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
   const sid = shopify.session.getOfflineId(shop)
   const session = sessions.get(sid)
-  if (!session) return res.status(401).json({ error: 'App not installed' })
+  if (!session) return res.status(401).json({ error: 'App not installed', debug: { shop, sid, sessionsCount: sessions.size } })
   try {
     const client = new shopify.clients.Rest({ session })
     const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
     res.json(response.body.products ? response.body : { products: response.body })
   } catch (err) {
     console.error('Products error:', err.message, err.stack?.slice(0, 1000))
-    res.status(500).json({ error: 'Failed to fetch products' })
+    res.status(500).json({ error: 'Failed to fetch products', msg: err.message })
   }
 })
 
