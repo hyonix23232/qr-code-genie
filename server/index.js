@@ -1,6 +1,5 @@
 import express from 'express'
 import compression from 'compression'
-import cookieParser from 'cookie-parser'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -41,8 +40,8 @@ const shopify = shopifyApi({
 
 const app = express()
 app.use(compression())
-app.use(cookieParser())
 app.use(express.json({ verify: (req, _, buf) => { req.rawBody = buf } }))
+app.use((req, res, next) => { req.setTimeout(30000); next() })
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'dist', 'assets')))
 
@@ -54,6 +53,8 @@ function serveIndex(req, res) {
   res.send(html)
 }
 
+const nonces = new Map()
+
 app.get('/', (req, res) => {
   const shop = req.query.shop
   if (shop) {
@@ -63,25 +64,40 @@ app.get('/', (req, res) => {
   serveIndex(req, res)
 })
 
-app.get('/auth', async (req, res) => {
+app.get('/auth', (req, res) => {
   const shop = req.query.shop
   if (!shop) return res.status(400).send('Missing shop')
-  try {
-    await shopify.auth.begin({ shop, callbackPath: '/auth/callback', isOnline: false, rawRequest: req, rawResponse: res })
-  } catch (err) {
-    console.error('[AUTH] begin error:', err.message, err.stack)
-    res.status(500).send('Auth failed')
-  }
+  const nonce = crypto.randomBytes(16).toString('hex')
+  nonces.set(nonce, { shop, createdAt: Date.now() })
+  const redirectUri = `${SHOPIFY_APP_URL}/auth/callback`
+  const scopes = SCOPES || 'read_products,write_products'
+  const url = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${nonce}`
+  res.redirect(url)
 })
 
 app.get('/auth/callback', async (req, res) => {
   try {
-    const { session } = await shopify.auth.callback({ rawRequest: req, rawResponse: res })
-    const sid = shopify.session.getOfflineId(session.shop)
+    const { shop, code, hmac, state, host } = req.query
+    if (!shop || !code || !hmac || !state) return res.status(400).send('Missing params')
+    const stored = nonces.get(state)
+    if (!stored || stored.shop !== shop) return res.status(400).send('Invalid state')
+    nonces.delete(state)
+    const map = { ...req.query }
+    delete map['hmac']
+    const message = Object.keys(map).sort().map(k => `${k}=${map[k]}`).join('&')
+    const computed = crypto.createHmac('sha256', SHOPIFY_API_SECRET).update(message).digest('hex')
+    if (hmac !== computed) return res.status(400).send('Invalid HMAC')
+    const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ client_id: SHOPIFY_API_KEY, client_secret: SHOPIFY_API_SECRET, code }),
+    })
+    if (!tokenRes.ok) return res.status(500).send('Token exchange failed')
+    const { access_token } = await tokenRes.json()
+    const session = { shop, accessToken: access_token }
+    const sid = shopify.session.getOfflineId(shop)
     sessions.set(sid, session)
-    const host = req.query.host || ''
-    const shop = encodeURIComponent(session.shop)
-    const returnUrl = host ? `/?host=${encodeURIComponent(host)}&shop=${shop}` : `/?shop=${shop}`
+    const returnUrl = host ? `/?host=${encodeURIComponent(host)}&shop=${encodeURIComponent(shop)}` : `/?shop=${encodeURIComponent(shop)}`
     res.redirect(returnUrl)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
