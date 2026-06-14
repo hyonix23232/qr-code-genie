@@ -146,9 +146,7 @@ app.get('/api/billing/check', async (req, res) => {
 })
 
 app.get('/privacy', (req, res) => {
-  const filePath = path.join(__dirname, '..', 'dist', 'privacy.html')
-  if (fs.existsSync(filePath)) res.sendFile(filePath)
-  else res.status(404).send('Not found')
+  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy - QR Code Genie</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}h1{color:#111}</style></head><body><h1>Privacy Policy</h1><p><strong>QR Code Genie</strong> respects your privacy.</p><h2>Data We Collect</h2><ul><li>Shop information (store name and domain for authentication)</li><li>QR code content (URLs or text you enter)</li></ul><h2>How We Use Data</h2><p>We use your data solely to provide QR code generation and product linking.</p><h2>Data Storage</h2><p>We do not permanently store QR code images or generated content. Session data is stored temporarily for authentication.</p><h2>Third-Party Services</h2><p>We do not share, sell, or transfer your data to third parties.</p><h2>Contact</h2><p>Email: myhyonix1@hotmail.com</p><p>Last updated: June 14, 2026</p></body></html>`)
 })
 
 app.get('*', serveIndex)
