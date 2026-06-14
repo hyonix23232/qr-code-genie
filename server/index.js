@@ -113,7 +113,9 @@ app.get('/auth/callback', async (req, res) => {
     const session = { shop, accessToken: access_token }
     const sid = shopify.session.getOfflineId(shop)
     sessions.set(sid, session)
-    const returnUrl = host ? `/?host=${encodeURIComponent(host)}&shop=${encodeURIComponent(shop)}` : `/?shop=${encodeURIComponent(shop)}`
+    const storeHandle = shop.replace('.myshopify.com', '')
+    const appHandle = process.env.SHOPIFY_APP_HANDLE || 'qr-code-genie'
+    const returnUrl = host ? `https://admin.shopify.com/store/${storeHandle}/apps/${appHandle}` : `/?shop=${encodeURIComponent(shop)}`
     res.redirect(returnUrl)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
