@@ -52,7 +52,15 @@ function serveIndex(req, res) {
   res.send(html)
 }
 
-app.get('/', serveIndex)
+app.get('/', (req, res) => {
+  const shop = req.query.shop
+  const host = req.query.host
+  if (shop && host) {
+    const sid = shopify.session.getOfflineId(shop)
+    if (!sessions.has(sid)) return res.redirect(`/auth?shop=${shop}`)
+  }
+  serveIndex(req, res)
+})
 
 app.get('/auth', async (req, res) => {
   const shop = req.query.shop
@@ -70,8 +78,9 @@ app.get('/auth/callback', async (req, res) => {
     const { session } = await shopify.auth.callback({ rawRequest: req, rawResponse: res })
     const sid = shopify.session.getOfflineId(session.shop)
     sessions.set(sid, session)
-    const host = req.query.host
-    res.redirect(`/?host=${host}&shop=${session.shop}`)
+    const host = req.query.host || ''
+    const returnUrl = new URL(`${SHOPIFY_APP_URL}/?host=${host}&shop=${session.shop}`)
+    res.redirect(returnUrl.href)
   } catch (err) {
     console.error('Auth callback error:', err)
     res.status(500).send('Auth callback failed')
