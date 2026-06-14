@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import express from 'express'
 import compression from 'compression'
 import fs from 'fs'
@@ -118,7 +117,7 @@ app.get('/api/billing/create', async (req, res) => {
       session,
       plan: 'Pro Plan',
       isTest: true,
-      returnUrl: `${SHOPIFY_APP_URL}/api/billing/confirm?shop=${shop}`,
+      returnUrl: `${SHOPIFY_APP_URL}/?shop=${shop}`,
     })
     res.json({ confirmationUrl: result.confirmationUrl })
   } catch (err) {
@@ -129,21 +128,7 @@ app.get('/api/billing/create', async (req, res) => {
 
 app.get('/api/billing/confirm', async (req, res) => {
   const { shop } = req.query
-  if (shop) {
-    const sid = shopify.session.getOfflineId(shop)
-    const session = sessions.get(sid)
-    if (session) {
-      try {
-        const parsed = await shopify.billing.request({
-          session,
-          plan: 'Pro Plan',
-          isTest: true,
-          returnUrl: `${SHOPIFY_APP_URL}/api/billing/confirm?shop=${shop}`,
-        })
-      } catch {}
-    }
-  }
-  res.redirect(`/?shop=${shop}`)
+  res.redirect(`/?shop=${shop || ''}`)
 })
 
 app.get('/api/billing/check', async (req, res) => {

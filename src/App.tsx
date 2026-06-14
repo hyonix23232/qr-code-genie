@@ -91,33 +91,29 @@ export default function App() {
   }, [])
 
   const handleDownload = useCallback(async (extension: 'png' | 'svg') => {
-    if (!qrRef.current || !url) return
+    if (!url) return
+    const canvas = qrContainerRef.current?.querySelector('canvas')
+    if (!canvas) return
     if (extension === 'svg') {
-      qrRef.current.download({ name: 'qr-code', extension: 'svg' })
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="280" height="280"><foreignObject width="280" height="280"><img src="${canvas.toDataURL()}"/></foreignObject></svg>`
+      const blob = new Blob([svg], { type: 'image/svg+xml' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'qr-code.svg'
+      a.click()
+      URL.revokeObjectURL(a.href)
       return
     }
-    if (isPro) {
-      const highRes = new QRCodeStyling({
-        width: 1024,
-        height: 1024,
-        data: url,
-        dotsOptions: { color: fgColor, type: dotStyle },
-        cornersSquareOptions: { color: fgColor, type: cornerStyle },
-        cornersDotOptions: { color: fgColor, type: 'dot' },
-        backgroundOptions: { color: bgColor },
-      })
-      const tempDiv = document.createElement('div')
-      tempDiv.style.position = 'absolute'
-      tempDiv.style.left = '-9999px'
-      document.body.appendChild(tempDiv)
-      highRes.append(tempDiv)
-      setTimeout(() => {
-        highRes.download({ name: 'qr-code-hires', extension: 'png' })
-        document.body.removeChild(tempDiv)
-      }, 150)
-    } else {
-      qrRef.current.download({ name: 'qr-code', extension: 'png' })
-    }
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'qr-code.png'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
+    }, 'image/png')
   }, [url, fgColor, bgColor, dotStyle, cornerStyle, logoDataUrl, isPro])
 
   const handleUpgrade = useCallback(async () => {
@@ -126,9 +122,15 @@ export default function App() {
     try {
       const res = await fetch(`/api/billing/create?shop=${shop}`)
       const data = await res.json()
-      if (data.confirmationUrl) window.location.href = data.confirmationUrl
+      if (data.confirmationUrl) {
+        window.open(data.confirmationUrl, '_blank')
+      } else {
+        alert('Could not create billing. Check console for details.')
+        console.error('Billing response:', data)
+      }
     } catch (err) {
       console.error('Billing error:', err)
+      alert('Upgrade failed. Check console for details.')
     } finally {
       setBillingLoading(false)
     }
