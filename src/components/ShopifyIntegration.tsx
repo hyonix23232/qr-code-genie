@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Text, InlineStack, Select } from '@shopify/polaris'
+import { getSessionToken } from '@shopify/app-bridge/utilities/session-token'
 
 interface Props {
   shop: string
+  appBridge: any
   onSelectProduct: (url: string) => void
 }
 
@@ -12,7 +14,7 @@ interface Product {
   handle: string
 }
 
-export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
+export default function ShopifyIntegration({ shop, appBridge, onSelectProduct }: Props) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -21,7 +23,12 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
       if (!shop) return
       setLoading(true)
       try {
-        const res = await fetch(`/api/products?shop=${shop}&limit=50`)
+        const headers: Record<string, string> = {}
+        if (appBridge) {
+          const token = await getSessionToken(appBridge)
+          headers['Authorization'] = `Bearer ${token}`
+        }
+        const res = await fetch('/api/products?limit=50', { headers })
         const data = await res.json()
         setProducts(data.products || [])
       } catch {
@@ -31,7 +38,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
       }
     }
     if (shop) fetchProducts()
-  }, [shop])
+  }, [shop, appBridge])
 
   const productOptions = [
     { label: loading ? 'Loading...' : 'Select a product...', value: '' },

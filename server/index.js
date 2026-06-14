@@ -1,6 +1,7 @@
 import express from 'express'
 import compression from 'compression'
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -41,7 +42,23 @@ const shopify = shopifyApi({
 const app = express()
 app.use(compression())
 app.use(express.json({ verify: (req, _, buf) => { req.rawBody = buf } }))
-app.use((req, res, next) => { req.setTimeout(30000); next() })
+
+function validateSessionToken(req, res, next) {
+  const auth = req.get('Authorization')
+  if (!auth || !auth.startsWith('Bearer ')) return next()
+  try {
+    const payload = jwt.verify(auth.slice(7), SHOPIFY_API_SECRET, { algorithms: ['HS256'] })
+    req.shop = payload.dest.replace('https://', '')
+    const sid = shopify.session.getOfflineId(req.shop)
+    req.session = sessions.get(sid)
+    req.scope = 'user'
+  } catch {
+    // Token invalid, continue without session
+  }
+  next()
+}
+
+app.use(validateSessionToken)
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'dist', 'assets')))
 
@@ -110,14 +127,14 @@ app.get('/api/config', (req, res) => {
 })
 
 app.get('/api/products', async (req, res) => {
-  const { shop, limit } = req.query
+  const shop = req.shop || req.query.shop
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
   const sid = shopify.session.getOfflineId(shop)
   const session = sessions.get(sid)
   if (!session) return res.status(401).json({ error: 'App not installed' })
   try {
     const client = new shopify.clients.Rest({ session })
-    const response = await client.get({ path: 'products', query: { limit: parseInt(limit) || 10, fields: 'id,title,handle' } })
+    const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
     res.json(response.body)
   } catch (err) {
     console.error('Products error:', err)
