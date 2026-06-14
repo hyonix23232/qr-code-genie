@@ -9,10 +9,19 @@ import { shopifyApi, ApiVersion, LogSeverity, BillingInterval, BillingReplacemen
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+console.log('=== DEBUG ENV ===')
+console.log('SHOPIFY_API_KEY:', process.env.SHOPIFY_API_KEY ? 'SET (length: ' + process.env.SHOPIFY_API_KEY.length + ')' : 'NOT SET')
+console.log('SHOPIFY_API_SECRET:', process.env.SHOPIFY_API_SECRET ? 'SET (length: ' + process.env.SHOPIFY_API_SECRET.length + ')' : 'NOT SET')
+console.log('SHOPIFY_APP_URL:', process.env.SHOPIFY_APP_URL || 'NOT SET')
+console.log('SCOPES:', process.env.SCOPES || 'NOT SET')
+console.log('PORT:', process.env.PORT || 'NOT SET')
+console.log('All env keys:', Object.keys(process.env).sort().join(', '))
+console.log('=== END DEBUG ===')
+
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SCOPES, PORT } = process.env
 
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
-  console.error('Missing SHOPIFY_API_KEY, SHOPIFY_API_SECRET, or SHOPIFY_APP_URL')
+  console.error('Missing required env vars')
   process.exit(1)
 }
 
