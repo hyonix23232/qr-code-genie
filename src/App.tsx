@@ -49,15 +49,10 @@ export default function App() {
 
   useEffect(() => {
     if (logoDataUrl) {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        qrRef.current?.update({
-          image: img,
-          imageOptions: { crossOrigin: 'anonymous', margin: 10 },
-        })
-      }
-      img.src = logoDataUrl
+      qrRef.current?.update({
+        image: logoDataUrl,
+        imageOptions: { margin: 10 },
+      })
     }
   }, [logoDataUrl])
 
