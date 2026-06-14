@@ -1,5 +1,6 @@
 import express from 'express'
 import compression from 'compression'
+import cookieParser from 'cookie-parser'
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -40,6 +41,7 @@ const shopify = shopifyApi({
 
 const app = express()
 app.use(compression())
+app.use(cookieParser())
 app.use(express.json({ verify: (req, _, buf) => { req.rawBody = buf } }))
 
 app.use('/assets', express.static(path.join(__dirname, '..', 'dist', 'assets')))
@@ -54,8 +56,7 @@ function serveIndex(req, res) {
 
 app.get('/', (req, res) => {
   const shop = req.query.shop
-  const host = req.query.host
-  if (shop && host) {
+  if (shop) {
     const sid = shopify.session.getOfflineId(shop)
     if (!sessions.has(sid)) return res.redirect(`/auth?shop=${encodeURIComponent(shop)}`)
   }
@@ -84,7 +85,7 @@ app.get('/auth/callback', async (req, res) => {
     res.redirect(returnUrl)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
-    res.status(500).send(`Auth callback failed: ${err.message}`)
+    res.status(500).send('Auth callback failed')
   }
 })
 
