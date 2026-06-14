@@ -7,12 +7,14 @@ import {
   Text,
   BlockStack,
   InlineGrid,
+  InlineStack,
   Frame,
   Toast,
 } from '@shopify/polaris'
 import QRCodeGenerator from './components/QRCodeGenerator'
 import CustomizationPanel from './components/CustomizationPanel'
 import ShopifyIntegration from './components/ShopifyIntegration'
+import AppLogo from './components/AppLogo'
 
 type DotType = 'square' | 'dots' | 'rounded' | 'extra-rounded'
 type CornerType = 'square' | 'dot' | 'extra-rounded'
@@ -123,7 +125,12 @@ export default function App() {
   return (
     <Frame>
       <Page
-        title="QR Code Genie"
+        title={
+          <InlineStack gap="200" blockAlign="center">
+            <AppLogo size={36} />
+            <span>QR Code Genie</span>
+          </InlineStack>
+        }
         subtitle="Generate beautiful QR codes in seconds"
       >
         <BlockStack gap="500">
