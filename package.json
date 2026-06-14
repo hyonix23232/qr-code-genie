@@ -13,7 +13,6 @@
     "@shopify/polaris-icons": "^9.3.1",
     "@shopify/shopify-api": "^13.0.0",
     "compression": "^1.7.4",
-    "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "qr-code-styling": "^1.6.0-rc.1",
