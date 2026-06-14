@@ -125,7 +125,8 @@ export default function App() {
     setToast({ message: `QR code downloaded as ${extension.toUpperCase()}` })
   }, [url])
 
-  const pricingUrl = shop ? `https://${shop.replace('https://', '').replace('http://', '')}/admin/apps/${appHandle}/pricing` : '#'
+  const storeHandle = shop.replace('.myshopify.com', '')
+  const pricingUrl = shop ? `https://admin.shopify.com/store/${storeHandle}/charges/${appHandle}/pricing_plans` : '#'
 
   const toastMarkup = toast ? (
     <Toast
