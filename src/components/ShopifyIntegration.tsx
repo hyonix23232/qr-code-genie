@@ -28,7 +28,7 @@ export default function ShopifyIntegration({ shop, appBridge, onSelectProduct }:
           const token = await getSessionToken(appBridge)
           headers['Authorization'] = `Bearer ${token}`
         }
-        const res = await fetch('/api/products?limit=50', { headers })
+        const res = await fetch(`/api/products?shop=${shop}&limit=50`, { headers })
         const data = await res.json()
         setProducts(data.products || [])
       } catch {
