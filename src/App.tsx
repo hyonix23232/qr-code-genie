@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import QRCodeStyling from 'qr-code-styling'
-import { createApp } from '@shopify/app-bridge'
 import {
   Page,
   Card,
@@ -33,7 +32,6 @@ export default function App() {
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
   const [appHandle, setAppHandle] = useState('qr-code-genie')
-  const [appBridge, setAppBridge] = useState<ReturnType<typeof createApp> | null>(null)
   const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null)
   const qrRef = useRef<QRCodeStyling | null>(null)
   const qrContainerRef = useRef<HTMLDivElement>(null)
@@ -80,8 +78,6 @@ export default function App() {
     const plan = params.get('plan_handle')
     if (host) {
       setIsEmbedded(true)
-      const app = createApp({ apiKey: (window as any).SHOPIFY_API_KEY, host })
-      setAppBridge(app)
     }
     if (shopParam) setShop(shopParam)
     if (plan === 'pro') setIsPro(true)
@@ -164,7 +160,6 @@ export default function App() {
           {isEmbedded && (
             <ShopifyIntegration
               shop={shop}
-              appBridge={appBridge}
               onSelectProduct={(productUrl) => setUrl(productUrl)}
             />
           )}
