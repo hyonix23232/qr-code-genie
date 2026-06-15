@@ -106,11 +106,18 @@ app.get('/auth/callback', async (req, res) => {
     const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ client_id: SHOPIFY_API_KEY, client_secret: SHOPIFY_API_SECRET, code }),
+      body: JSON.stringify({ client_id: SHOPIFY_API_KEY, client_secret: SHOPIFY_API_SECRET, code, expiring: 1 }),
     })
     if (!tokenRes.ok) return res.status(500).send('Token exchange failed')
-    const { access_token } = await tokenRes.json()
-    const session = { shop, accessToken: access_token }
+    const tokenData = await tokenRes.json()
+    const session = {
+      shop,
+      accessToken: tokenData.access_token,
+      expiresIn: tokenData.expires_in,
+      refreshToken: tokenData.refresh_token,
+      refreshTokenExpiresIn: tokenData.refresh_token_expires_in,
+      tokenObtainedAt: Date.now(),
+    }
     const sid = shopify.session.getOfflineId(shop)
     sessions.set(sid, session)
     const storeHandle = shop.replace('.myshopify.com', '')
@@ -130,16 +137,15 @@ app.get('/api/config', (req, res) => {
 app.get('/api/products', async (req, res) => {
   const shop = req.shop || req.query.shop
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
-  const sid = shopify.session.getOfflineId(shop)
-  const session = sessions.get(sid)
-  if (!session) return res.status(401).json({ error: 'App not installed', debug: { shop, sid, sessionsCount: sessions.size } })
+  const session = await ensureValidSession(shop)
+  if (!session) return res.status(401).json({ error: 'App not installed' })
   try {
     const client = new shopify.clients.Rest({ session })
     const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
     res.json(response.body.products ? response.body : { products: response.body })
   } catch (err) {
     console.error('Products error:', err.message, err.stack?.slice(0, 1000))
-    res.status(500).json({ error: 'Failed to fetch products', msg: err.message })
+    res.status(500).json({ error: 'Failed to fetch products' })
   }
 })
 
@@ -147,6 +153,42 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error:', err)
   res.status(500).json({ error: 'Internal error' })
 })
+
+async function ensureValidSession(shop) {
+  const sid = shopify.session.getOfflineId(shop)
+  const session = sessions.get(sid)
+  if (!session) return null
+  if (!session.refreshToken) return session
+  const elapsed = (Date.now() - (session.tokenObtainedAt || 0)) / 1000
+  const buffer = 300
+  if (elapsed < (session.expiresIn || 3600) - buffer) return session
+  try {
+    const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        client_id: SHOPIFY_API_KEY,
+        client_secret: SHOPIFY_API_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: session.refreshToken,
+      }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const updated = {
+      ...session,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+      refreshTokenExpiresIn: data.refresh_token_expires_in,
+      tokenObtainedAt: Date.now(),
+    }
+    sessions.set(sid, updated)
+    return updated
+  } catch {
+    return null
+  }
+}
 
 function verifyHmac(req, res) {
   const hmac = req.get('X-Shopify-Hmac-SHA256')
