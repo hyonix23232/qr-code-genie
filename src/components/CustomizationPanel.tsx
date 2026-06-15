@@ -27,6 +27,11 @@ const colorPresets = [
   { label: 'Minimal', fg: '#333333', bg: '#f5f5f5' },
 ]
 
+const freeDotStyles = ['rounded']
+const proDotStyles = ['square', 'dots', 'extra-rounded']
+const freeCornerStyles = ['square']
+const proCornerStyles = ['dot', 'extra-rounded']
+
 const dotStyleOptions = [
   { label: 'Square', value: 'square' },
   { label: 'Rounded', value: 'rounded' },
@@ -45,13 +50,23 @@ export default function CustomizationPanel({
   onFgColorChange, onBgColorChange, onDotStyleChange, onCornerStyleChange,
   onLogoUpload, logoFile, isPro,
 }: Props) {
+  const handleDotStyleChange = (v: string) => {
+    if (!isPro && !freeDotStyles.includes(v)) return
+    onDotStyleChange(v as DotType)
+  }
+
+  const handleCornerStyleChange = (v: string) => {
+    if (!isPro && !freeCornerStyles.includes(v)) return
+    onCornerStyleChange(v as CornerType)
+  }
+
   return (
     <BlockStack gap="400">
       <InlineStack align="space-between" blockAlign="center">
         <Text as="h2" variant="headingMd">
           Customize
         </Text>
-        {isPro && <Badge tone="success">Pro</Badge>}
+        {!isPro && <Badge tone="info">Free</Badge>}
       </InlineStack>
 
       <BlockStack gap="200">
@@ -117,15 +132,21 @@ export default function CustomizationPanel({
       <Select
         label="Dot Style"
         value={dotStyle}
-        onChange={(v) => onDotStyleChange(v as DotType)}
-        options={dotStyleOptions}
+        onChange={handleDotStyleChange}
+        options={dotStyleOptions.map((opt) => ({
+          ...opt,
+          disabled: !isPro && proDotStyles.includes(opt.value),
+        }))}
       />
 
       <Select
         label="Corner Style"
         value={cornerStyle}
-        onChange={(v) => onCornerStyleChange(v as CornerType)}
-        options={cornerStyleOptions}
+        onChange={handleCornerStyleChange}
+        options={cornerStyleOptions.map((opt) => ({
+          ...opt,
+          disabled: !isPro && proCornerStyles.includes(opt.value),
+        }))}
       />
 
       <BlockStack gap="200">

@@ -88,6 +88,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (!isPro) {
+      if (dotStyle !== 'rounded') setDotStyle('rounded')
+      if (cornerStyle !== 'square') setCornerStyle('square')
+    }
+  }, [isPro])
+
+  useEffect(() => {
     fetch('/api/config')
       .then((r) => r.json())
       .then((data) => { if (data.appHandle) setAppHandle(data.appHandle) })
