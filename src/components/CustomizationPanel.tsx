@@ -33,16 +33,16 @@ const freeCornerStyles = ['square']
 const proCornerStyles = ['dot', 'extra-rounded']
 
 const dotStyleOptions = [
-  { label: 'Square', value: 'square' },
+  { label: 'Square (Pro)', value: 'square' },
   { label: 'Rounded', value: 'rounded' },
-  { label: 'Dots', value: 'dots' },
-  { label: 'Extra Rounded', value: 'extra-rounded' },
+  { label: 'Dots (Pro)', value: 'dots' },
+  { label: 'Extra Rounded (Pro)', value: 'extra-rounded' },
 ]
 
 const cornerStyleOptions = [
   { label: 'Square', value: 'square' },
-  { label: 'Dot', value: 'dot' },
-  { label: 'Extra Rounded', value: 'extra-rounded' },
+  { label: 'Dot (Pro)', value: 'dot' },
+  { label: 'Extra Rounded (Pro)', value: 'extra-rounded' },
 ]
 
 export default function CustomizationPanel({
@@ -148,6 +148,12 @@ export default function CustomizationPanel({
           disabled: !isPro && proCornerStyles.includes(opt.value),
         }))}
       />
+
+      {!isPro && (
+        <Text as="p" variant="bodyXs" tone="subdued">
+          Upgrade to Pro to unlock Square, Dots, Extra Rounded styles and more.
+        </Text>
+      )}
 
       <BlockStack gap="200">
         <Text as="h3" variant="headingSm" tone="subdued">
