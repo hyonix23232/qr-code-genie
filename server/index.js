@@ -73,9 +73,15 @@ const nonces = new Map()
 
 app.get('/', (req, res) => {
   const shop = req.query.shop
+  const host = req.query.host
   if (shop) {
     const sid = shopify.session.getOfflineId(shop)
-    if (!sessions.has(sid)) return res.redirect(`/auth?shop=${encodeURIComponent(shop)}`)
+    if (!sessions.has(sid)) {
+      if (host) {
+        return res.send(`<!DOCTYPE html><html><body><script>window.top.location.href='/auth?shop=${encodeURIComponent(shop)}';</script></body></html>`)
+      }
+      return res.redirect(`/auth?shop=${encodeURIComponent(shop)}`)
+    }
   }
   serveIndex(req, res)
 })
@@ -120,10 +126,7 @@ app.get('/auth/callback', async (req, res) => {
     }
     const sid = shopify.session.getOfflineId(shop)
     sessions.set(sid, session)
-    const storeHandle = shop.replace('.myshopify.com', '')
-    const appHandle = process.env.SHOPIFY_APP_HANDLE || 'qr-code-genie'
-    const returnUrl = host ? `https://admin.shopify.com/store/${storeHandle}/apps/${appHandle}` : `/?shop=${encodeURIComponent(shop)}`
-    res.redirect(returnUrl)
+    res.redirect(`/?shop=${encodeURIComponent(shop)}`)
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error:', err.message, err.stack)
     res.status(500).send('Auth callback failed')
