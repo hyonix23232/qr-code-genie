@@ -65,7 +65,7 @@ function serveIndex(req, res) {
   const filePath = path.join(__dirname, '..', 'dist', 'index.html')
   if (!fs.existsSync(filePath)) return res.status(500).send('Frontend not built. Run: npm run build')
   let html = fs.readFileSync(filePath, 'utf-8')
-  html = html.replace('__SHOPIFY_API_KEY__', SHOPIFY_API_KEY)
+  html = html.replace(/__SHOPIFY_API_KEY__/g, SHOPIFY_API_KEY)
   res.send(html)
 }
 
