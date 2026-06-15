@@ -41,7 +41,6 @@ export default function ShopifyIntegration({ shop, appBridge, onSelectProduct }:
   }, [shop, appBridge])
 
   const productOptions = [
-    { label: loading ? 'Loading...' : 'Select a product...', value: '' },
     ...products.map((p) => ({ label: p.title, value: p.handle })),
   ]
 
