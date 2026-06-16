@@ -10,16 +10,14 @@ import { shopifyApi, ApiVersion, LogSeverity } from '@shopify/shopify-api'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-console.log('=== DEBUG ENV ===')
-console.log('SHOPIFY_API_KEY:', process.env.SHOPIFY_API_KEY ? 'SET (length: ' + process.env.SHOPIFY_API_KEY.length + ')' : 'NOT SET')
-console.log('SHOPIFY_API_SECRET:', process.env.SHOPIFY_API_SECRET ? 'SET (length: ' + process.env.SHOPIFY_API_SECRET.length + ')' : 'NOT SET')
-console.log('SHOPIFY_APP_URL:', process.env.SHOPIFY_APP_URL || 'NOT SET')
-console.log('SHOPIFY_APP_HANDLE:', process.env.SHOPIFY_APP_HANDLE || 'qr-code-genie (default)')
-console.log('SCOPES:', process.env.SCOPES || 'NOT SET')
-console.log('PORT:', process.env.PORT || 'NOT SET')
-console.log('=== END DEBUG ===')
+console.log('DEBUG ENV:')
+console.log('SHOPIFY_API_KEY:', process.env.SHOPIFY_API_KEY ? 'SET' : 'NOT SET')
+console.log('SHOPIFY_APP_HANDLE:', process.env.SHOPIFY_APP_HANDLE || 'default')
+console.log('APP_ID:', process.env.APP_ID || 'NOT SET')
+console.log('PARTNER_API_TOKEN:', process.env.PARTNER_API_TOKEN ? 'SET' : 'NOT SET')
+console.log('PORT:', process.env.PORT || 'default')
 
-const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT } = process.env
+const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT, APP_ID, PARTNER_API_TOKEN } = process.env
 
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
@@ -149,6 +147,41 @@ app.get('/api/products', async (req, res) => {
   } catch (err) {
     console.error('Products error:', err.message, err.stack?.slice(0, 1000))
     res.status(500).json({ error: 'Failed to fetch products' })
+  }
+})
+
+app.get('/api/subscription', async (req, res) => {
+  const shop = req.shop || req.query.shop
+  if (!shop) return res.status(400).json({ error: 'Missing shop' })
+  const session = await ensureValidSession(shop)
+  if (!session) return res.status(401).json({ error: 'App not installed' })
+  if (!PARTNER_API_TOKEN || !APP_ID) {
+    return res.json({ plan: 'free', active: false })
+  }
+  try {
+    const client = new shopify.clients.Graphql({ session })
+    const shopData = await client.query({ data: '{ shop { id } }' })
+    const shopGid = shopData?.data?.shop?.id
+    if (!shopGid) return res.json({ plan: 'free', active: false })
+    const partnerRes = await fetch(`https://partners.shopify.com/api/unstable/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': PARTNER_API_TOKEN },
+      body: JSON.stringify({
+        query: `query activeSubscription($appId: ID!, $shopId: ID!) {
+          activeSubscription(appId: $appId, shopId: $shopId) {
+            items { handle }
+          }
+        }`,
+        variables: { appId: `gid://shopify/App/${APP_ID}`, shopId: shopGid },
+      }),
+    })
+    const partnerData = await partnerRes.json()
+    const subscription = partnerData?.data?.activeSubscription
+    const isPro = subscription?.items?.some((i) => i.handle == 'pro')
+    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro })
+  } catch (err) {
+    console.error('Subscription error:', err)
+    res.json({ plan: 'free', active: false })
   }
 })
 

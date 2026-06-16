@@ -73,13 +73,19 @@ export default function App() {
     const params = new URLSearchParams(window.location.search)
     const host = params.get('host')
     const shopParam = params.get('shop')
-    const plan = params.get('plan_handle')
     if (host) {
       setIsEmbedded(true)
     }
     if (shopParam) setShop(shopParam)
-    if (plan === 'pro') setIsPro(true)
   }, [])
+
+  useEffect(() => {
+    if (!shop) return
+    fetch(`/api/subscription?shop=${shop}`)
+      .then((r) => r.json())
+      .then((data) => setIsPro(data.active))
+      .catch(() => {})
+  }, [shop])
 
   useEffect(() => {
     if (!isPro) {
