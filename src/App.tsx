@@ -63,12 +63,10 @@ export default function App() {
   }, [url, fgColor, bgColor, dotStyle, cornerStyle])
 
   useEffect(() => {
-    if (logoDataUrl) {
-      qrRef.current?.update({
-        image: logoDataUrl,
-        imageOptions: { margin: 10 },
-      })
-    }
+    qrRef.current?.update({
+      image: logoDataUrl || null,
+      imageOptions: { margin: 10 },
+    })
   }, [logoDataUrl])
 
   useEffect(() => {
@@ -97,7 +95,13 @@ export default function App() {
       .catch(() => {})
   }, [])
 
-  const handleLogoUpload = useCallback((file: File) => {
+  const handleLogoUpload = useCallback((file: File | null) => {
+    if (!file) {
+      setLogoFile(null)
+      setLogoDataUrl(null)
+      qrRef.current?.update({ image: undefined })
+      return
+    }
     setLogoFile(file)
     const reader = new FileReader()
     reader.onload = (e) => setLogoDataUrl(e.target?.result as string)

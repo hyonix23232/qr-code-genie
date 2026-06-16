@@ -3,7 +3,7 @@ import { Text, Icon } from '@shopify/polaris'
 import { ImageIcon, XCircleIcon } from '@shopify/polaris-icons'
 
 interface Props {
-  onUpload: (file: File) => void
+  onUpload: (file: File | null) => void
   logoFile: File | null
   isPro: boolean
 }
@@ -64,10 +64,10 @@ export default function LogoUploader({ onUpload, logoFile, isPro }: Props) {
           <button
             type="button"
             onClick={() => {
-              if (inputRef.current) inputRef.current.value = ''
-              onUpload(new File([], ''))
+                if (inputRef.current) inputRef.current.value = ''
+                onUpload(null as any)
 
-            }}
+              }}
             className="text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             <Icon source={XCircleIcon} />
