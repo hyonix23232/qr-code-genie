@@ -6,7 +6,6 @@ embedded = true
 
 [access_scopes]
 scopes = "read_products,write_products"
-use_legacy_install_flow = true
 
 [auth]
 redirect_urls = ["https://qr-code-genie-production.up.railway.app/auth/callback"]

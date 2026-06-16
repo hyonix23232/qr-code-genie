@@ -48,6 +48,7 @@ function validateSessionToken(req, res, next) {
     const payload = jwt.verify(auth.slice(7), SHOPIFY_API_SECRET, { algorithms: ['HS256'] })
     if (payload.aud !== SHOPIFY_API_KEY) return next()
     req.shop = payload.dest.replace('https://', '')
+    req.sessionToken = auth.slice(7)
     const sid = shopify.session.getOfflineId(req.shop)
     req.session = sessions.get(sid)
   } catch {
@@ -72,12 +73,12 @@ const nonces = new Map()
 app.get('/', (req, res) => {
   const shop = req.query.shop
   const host = req.query.host
+  if (host) {
+    return serveIndex(req, res)
+  }
   if (shop) {
     const sid = shopify.session.getOfflineId(shop)
     if (!sessions.has(sid)) {
-      if (host) {
-        return res.send(`<!DOCTYPE html><html><body><script>window.top.location.href='/auth?shop=${encodeURIComponent(shop)}';</script></body></html>`)
-      }
       return res.redirect(`/auth?shop=${encodeURIComponent(shop)}`)
     }
   }
@@ -138,7 +139,7 @@ app.get('/api/config', (req, res) => {
 app.get('/api/products', async (req, res) => {
   const shop = req.shop || req.query.shop
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
-  const session = await ensureValidSession(shop)
+  const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed' })
   try {
     const client = new shopify.clients.Rest({ session })
@@ -153,7 +154,7 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/subscription', async (req, res) => {
   const shop = req.shop || req.query.shop
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
-  const session = await ensureValidSession(shop)
+  const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed' })
   if (!PARTNER_API_TOKEN || !APP_ID) {
     return res.json({ plan: 'free', active: false })
@@ -221,6 +222,24 @@ async function ensureValidSession(shop) {
     }
     sessions.set(sid, updated)
     return updated
+  } catch {
+    return null
+  }
+}
+
+async function ensureOnlineSession(req) {
+  const shop = req.shop || req.query.shop
+  if (!shop) return null
+  const stored = await ensureValidSession(shop)
+  if (stored) return stored
+  if (!req.sessionToken) return null
+  try {
+    const { session } = await shopify.auth.tokenExchange({
+      sessionToken: req.sessionToken,
+      shop,
+      shopDomain: shop,
+    })
+    return session
   } catch {
     return null
   }
