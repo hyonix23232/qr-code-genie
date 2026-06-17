@@ -65,7 +65,7 @@ export default function LogoUploader({ onUpload, logoFile, isPro }: Props) {
             type="button"
             onClick={() => {
                 if (inputRef.current) inputRef.current.value = ''
-                onUpload(null as any)
+                onUpload(null)
 
               }}
             className="text-gray-400 hover:text-gray-600 cursor-pointer"

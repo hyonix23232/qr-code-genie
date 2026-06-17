@@ -31,7 +31,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
         const data = await res.json()
         setProducts(data.products || [])
       } catch {
-        console.warn('Could not fetch products')
+
       } finally {
         setLoading(false)
       }

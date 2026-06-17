@@ -10,12 +10,6 @@ import { shopifyApi, ApiVersion, LogSeverity } from '@shopify/shopify-api'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-console.log('DEBUG ENV:')
-console.log('SHOPIFY_API_KEY:', process.env.SHOPIFY_API_KEY ? 'SET' : 'NOT SET')
-console.log('SHOPIFY_APP_HANDLE:', process.env.SHOPIFY_APP_HANDLE || 'default')
-console.log('APP_ID:', process.env.APP_ID || 'NOT SET')
-console.log('PARTNER_API_TOKEN:', process.env.PARTNER_API_TOKEN ? 'SET' : 'NOT SET')
-console.log('PORT:', process.env.PORT || 'default')
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT, APP_ID, PARTNER_API_TOKEN } = process.env
 
@@ -34,6 +28,7 @@ const shopify = shopifyApi({
   hostScheme: 'https',
   apiVersion: ApiVersion.July25,
   isEmbeddedApp: true,
+  expiringOfflineAccessTokens: true,
   logLevel: LogSeverity.Warning,
 })
 
@@ -198,6 +193,7 @@ async function ensureValidSession(shop) {
   if (!session.refreshToken) return session
   const elapsed = (Date.now() - (session.tokenObtainedAt || 0)) / 1000
   const buffer = 300
+  if (session.refreshTokenExpiresIn && elapsed >= session.refreshTokenExpiresIn - buffer) return null
   if (elapsed < (session.expiresIn || 3600) - buffer) return session
   try {
     const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -266,7 +262,7 @@ app.post('/webhooks/shop/redact', (req, res) => {
 })
 
 app.get('/privacy', (req, res) => {
-  res.send(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy - QR Code Genie</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}h1{color:#111}h2{color:#333;margin-top:28px}p,li{color:#555}</style></head><body><h1>Privacy Policy</h1><p>Last updated: June 15, 2026</p><h2>Information We Collect</h2><ul><li><strong>Shop information</strong> — store name, domain, and language for authentication and product linking</li><li><strong>QR code content</strong> — URLs or text you enter to generate QR codes</li><li><strong>Product data</strong> — product handles and titles accessed via the Shopify API with your permission</li></ul><h2>How We Use Information</h2><p>All information is used solely to generate QR codes and link to your Shopify products. We do not use your data for advertising, profiling, or any purpose beyond the core functionality of the app.</p><h2>Data Storage & Retention</h2><p>QR code content is processed in real time and is not permanently stored on our servers. Session tokens and authentication data are retained temporarily during active use and discarded shortly after. We do not store QR code images.</p><h2>Data Sharing</h2><p>We do not sell, share, or transfer your personal information to third parties. Data is accessed through the Shopify API in compliance with Shopify's Privacy Policy and API Terms of Service.</p><h2>Your Rights</h2><p>You can request access to, correction, or deletion of your data at any time by contacting us. Uninstalling the app will revoke API access immediately.</p><h2>Contact</h2><p>Email: myhyonix1@hotmail.com</p></body></html>`)
+  res.sendFile(path.join(__dirname, '..', 'public', 'privacy.html'))
 })
 
 app.get('*', serveIndex)
