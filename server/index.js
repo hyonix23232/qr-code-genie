@@ -281,7 +281,40 @@ app.post('/webhooks/shop/redact', (req, res) => {
 })
 
 app.get('/privacy', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'privacy.html'))
+  res.type('html').send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Privacy - QR Code Genie</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333;line-height:1.6}
+    h1{color:#111}
+    h2{color:#333;margin-top:28px}
+    p,li{color:#555}
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p>Last updated: June 15, 2026</p>
+  <h2>Information We Collect</h2>
+  <ul>
+    <li><strong>Shop information</strong> &mdash; store name, domain, and language for authentication and product linking</li>
+    <li><strong>QR code content</strong> &mdash; URLs or text you enter to generate QR codes</li>
+    <li><strong>Product data</strong> &mdash; product handles and titles accessed via the Shopify API with your permission</li>
+  </ul>
+  <h2>How We Use Information</h2>
+  <p>All information is used solely to generate QR codes and link to your Shopify products. We do not use your data for advertising, profiling, or any purpose beyond the core functionality of the app.</p>
+  <h2>Data Storage &amp; Retention</h2>
+  <p>QR code content is processed in real time and is not permanently stored on our servers. Session tokens and authentication data are retained temporarily during active use and discarded shortly after. We do not store QR code images.</p>
+  <h2>Data Sharing</h2>
+  <p>We do not sell, share, or transfer your personal information to third parties. Data is accessed through the Shopify API in compliance with Shopify&#39;s Privacy Policy and API Terms of Service.</p>
+  <h2>Your Rights</h2>
+  <p>You can request access to, correction, or deletion of your data at any time by contacting us. Uninstalling the app will revoke API access immediately.</p>
+  <h2>Contact</h2>
+  <p>Email: myhyonix1@hotmail.com</p>
+</body>
+</html>`)
 })
 
 app.get('*', serveIndex)
