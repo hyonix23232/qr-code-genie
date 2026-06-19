@@ -15,7 +15,7 @@ interface Props {
   onCornerStyleChange: (s: CornerType) => void
   onLogoUpload: (file: File) => void
   logoFile: File | null
-  isPro: boolean
+  isPro: boolean | null
 }
 
 const colorPresets = [
@@ -51,12 +51,12 @@ export default function CustomizationPanel({
   onLogoUpload, logoFile, isPro,
 }: Props) {
   const handleDotStyleChange = (v: string) => {
-    if (!isPro && !freeDotStyles.includes(v)) return
+    if (isPro !== true && !freeDotStyles.includes(v)) return
     onDotStyleChange(v as DotType)
   }
 
   const handleCornerStyleChange = (v: string) => {
-    if (!isPro && !freeCornerStyles.includes(v)) return
+    if (isPro !== true && !freeCornerStyles.includes(v)) return
     onCornerStyleChange(v as CornerType)
   }
 
@@ -66,7 +66,7 @@ export default function CustomizationPanel({
         <Text as="h2" variant="headingMd">
           Customize
         </Text>
-        {!isPro && <Badge tone="info">Free</Badge>}
+        {isPro === false && <Badge tone="info">Free</Badge>}
       </InlineStack>
 
       <BlockStack gap="200">
@@ -135,7 +135,7 @@ export default function CustomizationPanel({
         onChange={handleDotStyleChange}
         options={dotStyleOptions.map((opt) => ({
           ...opt,
-          disabled: !isPro && proDotStyles.includes(opt.value),
+          disabled: isPro !== true && proDotStyles.includes(opt.value),
         }))}
       />
 
@@ -145,11 +145,11 @@ export default function CustomizationPanel({
         onChange={handleCornerStyleChange}
         options={cornerStyleOptions.map((opt) => ({
           ...opt,
-          disabled: !isPro && proCornerStyles.includes(opt.value),
+          disabled: isPro !== true && proCornerStyles.includes(opt.value),
         }))}
       />
 
-      {!isPro && (
+      {isPro === false && (
         <Text as="p" variant="bodyXs" tone="subdued">
           Upgrade to Pro to unlock Square, Dots, Extra Rounded styles and more.
         </Text>

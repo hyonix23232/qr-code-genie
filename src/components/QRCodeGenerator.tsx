@@ -6,7 +6,7 @@ interface Props {
   onUrlChange: (url: string) => void
   qrContainerRef: RefObject<HTMLDivElement | null>
   onDownload: (extension: 'png' | 'svg') => void
-  isPro: boolean
+  isPro: boolean | null
 }
 
 export default function QRCodeGenerator({
@@ -54,9 +54,9 @@ export default function QRCodeGenerator({
         </Button>
         <Button
           onClick={() => onDownload('svg')}
-          disabled={!url || !isPro}
+          disabled={!url || isPro !== true}
         >
-          {isPro ? 'Download SVG' : 'SVG (Pro)'}
+          {isPro === true ? 'Download SVG' : 'SVG (Pro)'}
         </Button>
       </ButtonGroup>
     </BlockStack>

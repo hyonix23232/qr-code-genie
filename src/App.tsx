@@ -28,7 +28,7 @@ export default function App() {
   const [cornerStyle, setCornerStyle] = useState<CornerType>('square')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
-  const [isPro, setIsPro] = useState(false)
+  const [isPro, setIsPro] = useState<boolean | null>(null)
   const [subLoading, setSubLoading] = useState(true)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
@@ -95,7 +95,7 @@ export default function App() {
   }, [shop])
 
   useEffect(() => {
-    if (!isPro) {
+    if (isPro === false) {
       if (dotStyle !== 'rounded') setDotStyle('rounded')
       if (cornerStyle !== 'square') setCornerStyle('square')
     }
@@ -181,7 +181,7 @@ export default function App() {
             />
           )}
 
-          {!isPro && !subLoading && shop && (
+          {isPro === false && shop && (
             <Banner tone="info">
               <InlineStack gap="300" blockAlign="center" wrap={false}>
                 <Text as="span" variant="bodyMd">
