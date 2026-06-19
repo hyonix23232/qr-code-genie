@@ -225,7 +225,8 @@ async function ensureOnlineSession(req) {
     const { session } = await shopify.auth.tokenExchange({
       sessionToken: req.sessionToken,
       shop,
-      shopDomain: shop,
+      requestedTokenType: 'urn:shopify:params:oauth:token-type:online-access-token',
+      expiring: true,
     })
     return session
   } catch {
