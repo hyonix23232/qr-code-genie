@@ -12,11 +12,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT } = process.env
-const SHOPIFY_APP_ID = process.env.SHOPIFY_APP_ID || process.env.APP_ID
-const SHOPIFY_PARTNER_TOKEN = process.env.SHOPIFY_PARTNER_TOKEN || process.env.PARTNER_API_TOKEN
-const SHOPIFY_ORG_ID = process.env.SHOPIFY_ORG_ID || process.env.ORG_ID
 
-console.log('ENV KEYS:', Object.keys(process.env).sort().join(', '))
+let _appId = process.env.SHOPIFY_APP_ID || process.env.APP_ID
+let _partnerToken = process.env.SHOPIFY_PARTNER_TOKEN || process.env.PARTNER_API_TOKEN
+let _orgId = process.env.SHOPIFY_ORG_ID || process.env.ORG_ID
+try {
+  const billingFile = path.join(__dirname, 'billing.json')
+  if (fs.existsSync(billingFile)) {
+    const billing = JSON.parse(fs.readFileSync(billingFile, 'utf-8'))
+    if (billing.appId) _appId = billing.appId
+    if (billing.partnerToken) _partnerToken = billing.partnerToken
+    if (billing.orgId) _orgId = billing.orgId
+  }
+} catch {}
+const SHOPIFY_APP_ID = _appId
+const SHOPIFY_PARTNER_TOKEN = _partnerToken
+const SHOPIFY_ORG_ID = _orgId
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
   process.exit(1)
@@ -136,11 +147,7 @@ app.get('/api/config', (req, res) => {
     apiKey: SHOPIFY_API_KEY,
     appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie',
     hasBillingVars: !!SHOPIFY_APP_ID && !!SHOPIFY_PARTNER_TOKEN,
-    testVar: process.env.TEST_VAR || null,
-    appId: process.env.APP_ID || null,
-    shopifyAppId: process.env.SHOPIFY_APP_ID || null,
-    partnerToken: process.env.PARTNER_API_TOKEN ? 'SET' : null,
-    shopifyPartnerToken: process.env.SHOPIFY_PARTNER_TOKEN ? 'SET' : null,
+
   })
 })
 
