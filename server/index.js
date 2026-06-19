@@ -128,7 +128,7 @@ app.get('/auth/callback', async (req, res) => {
 })
 
 app.get('/api/config', (req, res) => {
-  res.json({ apiKey: SHOPIFY_API_KEY, appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie' })
+  res.json({ apiKey: SHOPIFY_API_KEY, appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie', hasBillingVars: !!APP_ID && !!PARTNER_API_TOKEN })
 })
 
 app.get('/api/products', async (req, res) => {
