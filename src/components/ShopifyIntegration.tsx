@@ -57,7 +57,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
             |
           </Text>
           <Text as="span" variant="bodyXs" tone="subdued">
-            {shop}
+            {primaryDomain ? primaryDomain.replace('https://', '') : shop}
           </Text>
         </InlineStack>
 
