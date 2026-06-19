@@ -81,10 +81,15 @@ export default function App() {
 
   useEffect(() => {
     if (!shop) return
-    fetch(`/api/subscription?shop=${shop}`)
-      .then((r) => r.json())
-      .then((data) => setIsPro(data.active))
-      .catch(() => {})
+    ;(async () => {
+      const token = window.shopify?.idToken ? await window.shopify.idToken() : null
+      const headers: Record<string, string> = {}
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      fetch(`/api/subscription?shop=${shop}`, { headers })
+        .then((r) => r.json())
+        .then((data) => setIsPro(data.active))
+        .catch(() => {})
+    })()
   }, [shop])
 
   useEffect(() => {
