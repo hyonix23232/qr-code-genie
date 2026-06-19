@@ -14,6 +14,7 @@ interface Product {
 
 export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
   const [products, setProducts] = useState<Product[]>([])
+  const [primaryDomain, setPrimaryDomain] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
         const res = await fetch(`/api/products?shop=${shop}&limit=50`, { headers })
         const data = await res.json()
         setProducts(data.products || [])
+        setPrimaryDomain(data.primaryDomain || `https://${shop}`)
       } catch {
 
       } finally {
@@ -39,6 +41,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
     if (shop) fetchProducts()
   }, [shop])
 
+  const baseUrl = primaryDomain || `https://${shop}`
   const productOptions = [
     ...products.map((p) => ({ label: p.title, value: p.handle })),
   ]
@@ -64,7 +67,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
               labelHidden
               value=""
               onChange={(v) => {
-                if (v) onSelectProduct(`https://${shop.replace('https://', '')}/products/${v}`)
+                if (v) onSelectProduct(`${baseUrl}/products/${v}`)
               }}
               options={loading ? [] : productOptions}
               placeholder={loading ? 'Loading products...' : 'Quick pick a product...'}

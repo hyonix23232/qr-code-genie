@@ -168,9 +168,12 @@ app.get('/api/products', async (req, res) => {
   const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed' })
   try {
+    const gql = new shopify.clients.Graphql({ session })
+    const shopData = await gql.request('{ shop { primaryDomain { url } } }')
+    const primaryDomain = shopData?.data?.shop?.primaryDomain?.url || `https://${shop}`
     const client = new shopify.clients.Rest({ session })
     const response = await client.get({ path: 'products', query: { limit: parseInt(req.query.limit) || 10, fields: 'id,title,handle' } })
-    res.json(response.body.products ? response.body : { products: response.body })
+    res.json({ products: response.body.products, primaryDomain })
   } catch (err) {
     console.error('Products error:', err.message, err.stack?.slice(0, 1000))
     res.status(500).json({ error: 'Failed to fetch products' })
