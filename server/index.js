@@ -128,10 +128,12 @@ app.get('/auth/callback', async (req, res) => {
 })
 
 app.get('/api/config', (req, res) => {
+  const envNames = Object.keys(process.env).filter(k => /shopify|app_id|token|org/i.test(k)).sort()
   res.json({
     apiKey: SHOPIFY_API_KEY,
     appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie',
-    hasBillingVars: !!SHOPIFY_APP_ID && !!SHOPIFY_PARTNER_TOKEN
+    hasBillingVars: !!SHOPIFY_APP_ID && !!SHOPIFY_PARTNER_TOKEN,
+    allEnvVarNames: envNames
   })
 })
 
