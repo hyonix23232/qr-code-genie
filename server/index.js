@@ -11,7 +11,7 @@ import { shopifyApi, ApiVersion, LogSeverity } from '@shopify/shopify-api'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 
-const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT, APP_ID, PARTNER_API_TOKEN } = process.env
+const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT, APP_ID, PARTNER_API_TOKEN, ORG_ID } = process.env
 
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
@@ -150,16 +150,19 @@ app.get('/api/subscription', async (req, res) => {
   const shop = req.shop || req.query.shop
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
   const session = await ensureOnlineSession(req)
-  if (!session) return res.status(401).json({ error: 'App not installed' })
+  if (!session) return res.status(401).json({ error: 'App not installed', debug: 'ensureOnlineSession returned null' })
   if (!PARTNER_API_TOKEN || !APP_ID) {
-    return res.json({ plan: 'free', active: false })
+    return res.json({ plan: 'free', active: false, debug: 'Missing PARTNER_API_TOKEN or APP_ID' })
   }
   try {
     const client = new shopify.clients.Graphql({ session })
     const shopData = await client.query({ data: '{ shop { id } }' })
     const shopGid = shopData?.data?.shop?.id
-    if (!shopGid) return res.json({ plan: 'free', active: false })
-    const partnerRes = await fetch(`https://partners.shopify.com/api/2026-07/graphql.json`, {
+    if (!shopGid) return res.json({ plan: 'free', active: false, debug: 'No shopGid from Admin API' })
+    const partnerApiUrl = ORG_ID
+      ? `https://partners.shopify.com/${ORG_ID}/api/2026-07/graphql.json`
+      : `https://partners.shopify.com/api/unstable/graphql.json`
+    const partnerRes = await fetch(partnerApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': PARTNER_API_TOKEN },
       body: JSON.stringify({
@@ -172,12 +175,15 @@ app.get('/api/subscription', async (req, res) => {
       }),
     })
     const partnerData = await partnerRes.json()
+    if (partnerData?.errors) {
+      return res.json({ plan: 'free', active: false, debug: 'Partner API error', errors: partnerData.errors })
+    }
     const subscription = partnerData?.data?.activeSubscription
     const isPro = subscription?.items?.some((i) => i.handle == 'pro')
-    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro })
+    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro, debug: 'Partner API success', subscription })
   } catch (err) {
     console.error('Subscription error:', err)
-    res.json({ plan: 'free', active: false })
+    res.json({ plan: 'free', active: false, debug: `Exception: ${err.message}` })
   }
 })
 
