@@ -11,7 +11,7 @@ import { shopifyApi, ApiVersion, LogSeverity } from '@shopify/shopify-api'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 
-const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT, APP_ID, PARTNER_API_TOKEN } = process.env
+const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_APP_URL, SHOPIFY_APP_HANDLE, SCOPES, PORT } = process.env
 
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
@@ -151,30 +151,22 @@ app.get('/api/subscription', async (req, res) => {
   if (!shop) return res.status(400).json({ error: 'Missing shop' })
   const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed' })
-  if (!PARTNER_API_TOKEN || !APP_ID) {
-    return res.json({ plan: 'free', active: false })
-  }
   try {
     const client = new shopify.clients.Graphql({ session })
-    const shopData = await client.query({ data: '{ shop { id } }' })
-    const shopGid = shopData?.data?.shop?.id
-    if (!shopGid) return res.json({ plan: 'free', active: false })
-    const partnerRes = await fetch(`https://partners.shopify.com/api/unstable/graphql`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': PARTNER_API_TOKEN },
-      body: JSON.stringify({
-        query: `query activeSubscription($appId: ID!, $shopId: ID!) {
-          activeSubscription(appId: $appId, shopId: $shopId) {
-            items { handle }
+    const data = await client.query({
+      data: `{
+        currentAppInstallation {
+          activeSubscriptions {
+            id
+            name
+            status
           }
-        }`,
-        variables: { appId: `gid://shopify/App/${APP_ID}`, shopId: shopGid },
-      }),
+        }
+      }`,
     })
-    const partnerData = await partnerRes.json()
-    const subscription = partnerData?.data?.activeSubscription
-    const isPro = subscription?.items?.some((i) => i.handle == 'pro')
-    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro })
+    const subs = data?.data?.currentAppInstallation?.activeSubscriptions || []
+    const isPro = subs.some((s) => s.status === 'ACTIVE')
+    res.json({ plan: isPro ? 'pro' : 'free', active: isPro })
   } catch (err) {
     console.error('Subscription error:', err)
     res.json({ plan: 'free', active: false })
