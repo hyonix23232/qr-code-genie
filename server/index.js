@@ -135,6 +135,11 @@ app.get('/api/config', (req, res) => {
     apiKey: SHOPIFY_API_KEY,
     appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie',
     hasBillingVars: !!SHOPIFY_APP_ID && !!SHOPIFY_PARTNER_TOKEN,
+    testVar: process.env.TEST_VAR || null,
+    appId: process.env.APP_ID || null,
+    shopifyAppId: process.env.SHOPIFY_APP_ID || null,
+    partnerToken: process.env.PARTNER_API_TOKEN ? 'SET' : null,
+    shopifyPartnerToken: process.env.SHOPIFY_PARTNER_TOKEN ? 'SET' : null,
   })
 })
 
