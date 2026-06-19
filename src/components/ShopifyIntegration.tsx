@@ -3,6 +3,7 @@ import { Text, InlineStack, Select } from '@shopify/polaris'
 
 interface Props {
   shop: string
+  primaryDomain?: string
   onSelectProduct: (url: string) => void
 }
 
@@ -12,9 +13,8 @@ interface Product {
   handle: string
 }
 
-export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
+export default function ShopifyIntegration({ shop, primaryDomain, onSelectProduct }: Props) {
   const [products, setProducts] = useState<Product[]>([])
-  const [primaryDomain, setPrimaryDomain] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -31,7 +31,6 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
         const res = await fetch(`/api/products?shop=${shop}&limit=50`, { headers })
         const data = await res.json()
         setProducts(data.products || [])
-        setPrimaryDomain(data.primaryDomain || `https://${shop}`)
       } catch {
 
       } finally {
@@ -57,7 +56,7 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
             |
           </Text>
           <Text as="span" variant="bodyXs" tone="subdued">
-            {primaryDomain ? primaryDomain.replace('https://', '') : shop}
+            {(primaryDomain || `https://${shop}`).replace('https://', '')}
           </Text>
         </InlineStack>
 

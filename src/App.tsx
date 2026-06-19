@@ -31,6 +31,7 @@ export default function App() {
   const initialSub = (window as any).__INITIAL_SUB__
   const [isPro, setIsPro] = useState<boolean | null>(initialSub?.active ?? null)
   const [subLoading, setSubLoading] = useState(!initialSub)
+  const [primaryDomain, setPrimaryDomain] = useState(initialSub?.primaryDomain || '')
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
   const [appHandle, setAppHandle] = useState('qr-code-genie')
@@ -83,16 +84,21 @@ export default function App() {
 
   useEffect(() => {
     if (!shop) return
+    function handleSub(data: any) {
+      setIsPro(data.active)
+      if (data.primaryDomain) setPrimaryDomain(data.primaryDomain)
+      setSubLoading(false)
+    }
     fetch(`/api/subscription?shop=${shop}`)
       .then((r) => r.json())
-      .then((data) => { setIsPro(data.active); setSubLoading(false) })
+      .then(handleSub)
       .catch(() => {})
     ;(async () => {
       const token = window.shopify?.idToken ? await window.shopify.idToken() : null
       if (!token) { setSubLoading(false); return }
       fetch(`/api/subscription?shop=${shop}`, { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
-        .then((data) => { setIsPro(data.active); setSubLoading(false) })
+        .then(handleSub)
         .catch(() => setSubLoading(false))
     })()
   }, [shop])
@@ -180,6 +186,7 @@ export default function App() {
           {isEmbedded && (
             <ShopifyIntegration
               shop={shop}
+              primaryDomain={primaryDomain}
               onSelectProduct={(productUrl) => setUrl(productUrl)}
             />
           )}

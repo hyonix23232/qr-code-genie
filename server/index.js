@@ -192,8 +192,9 @@ app.get('/api/subscription', async (req, res) => {
   }
   try {
     const client = new shopify.clients.Graphql({ session })
-    const shopData = await client.request('{ shop { id } }')
+    const shopData = await client.request('{ shop { id primaryDomain { url } } }')
     const shopGid = shopData?.data?.shop?.id
+    const primaryDomain = shopData?.data?.shop?.primaryDomain?.url
     if (!shopGid) return res.json({ plan: 'free', active: false })
     const partnerApiUrl = SHOPIFY_ORG_ID
       ? `https://partners.shopify.com/${SHOPIFY_ORG_ID}/api/2026-07/graphql.json`
@@ -213,7 +214,7 @@ app.get('/api/subscription', async (req, res) => {
     const partnerData = await partnerRes.json()
     const subscription = partnerData?.data?.activeSubscription
     const isPro = subscription?.items?.some((i) => i.handle == 'pro')
-    const result = { plan: isPro ? 'pro' : 'free', active: !!isPro }
+    const result = { plan: isPro ? 'pro' : 'free', active: !!isPro, primaryDomain }
     setCachedSub(shop, result)
     res.json(result)
   } catch (err) {
