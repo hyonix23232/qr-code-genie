@@ -82,15 +82,17 @@ export default function App() {
 
   useEffect(() => {
     if (!shop) return
+    fetch(`/api/subscription?shop=${shop}`)
+      .then((r) => r.json())
+      .then((data) => { setIsPro(data.active); setSubLoading(false) })
+      .catch(() => {})
     ;(async () => {
       const token = window.shopify?.idToken ? await window.shopify.idToken() : null
-      const headers: Record<string, string> = {}
-      if (token) headers['Authorization'] = `Bearer ${token}`
-      fetch(`/api/subscription?shop=${shop}`, { headers })
+      if (!token) { setSubLoading(false); return }
+      fetch(`/api/subscription?shop=${shop}`, { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
-        .then((data) => setIsPro(data.active))
-        .catch(() => {})
-        .finally(() => setSubLoading(false))
+        .then((data) => { setIsPro(data.active); setSubLoading(false) })
+        .catch(() => setSubLoading(false))
     })()
   }, [shop])
 

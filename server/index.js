@@ -174,14 +174,14 @@ app.get('/api/products', async (req, res) => {
 
 app.get('/api/subscription', async (req, res) => {
   const shop = req.shop || req.query.shop
-  if (!shop) return res.status(400).json({ error: 'Missing shop' })
+  if (!shop) return res.json({ plan: 'free', active: false })
+  const cached = getCachedSub(shop)
+  if (cached) return res.json(cached)
   const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed', debug: 'ensureOnlineSession returned null' })
   if (!SHOPIFY_PARTNER_TOKEN || !SHOPIFY_APP_ID) {
     return res.json({ plan: 'free', active: false })
   }
-  const cached = getCachedSub(shop)
-  if (cached) return res.json(cached)
   try {
     const client = new shopify.clients.Graphql({ session })
     const shopData = await client.request('{ shop { id } }')
