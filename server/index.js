@@ -34,6 +34,17 @@ if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
 }
 
 const sessions = new Map()
+const subCache = new Map()
+const CACHE_TTL = 10 * 60 * 1000
+function getCachedSub(shop) {
+  const entry = subCache.get(shop)
+  if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data
+  subCache.delete(shop)
+  return null
+}
+function setCachedSub(shop, data) {
+  subCache.set(shop, { data, ts: Date.now() })
+}
 
 const shopify = shopifyApi({
   apiKey: SHOPIFY_API_KEY,
@@ -169,6 +180,8 @@ app.get('/api/subscription', async (req, res) => {
   if (!SHOPIFY_PARTNER_TOKEN || !SHOPIFY_APP_ID) {
     return res.json({ plan: 'free', active: false })
   }
+  const cached = getCachedSub(shop)
+  if (cached) return res.json(cached)
   try {
     const client = new shopify.clients.Graphql({ session })
     const shopData = await client.request('{ shop { id } }')
@@ -192,7 +205,9 @@ app.get('/api/subscription', async (req, res) => {
     const partnerData = await partnerRes.json()
     const subscription = partnerData?.data?.activeSubscription
     const isPro = subscription?.items?.some((i) => i.handle == 'pro')
-    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro })
+    const result = { plan: isPro ? 'pro' : 'free', active: !!isPro }
+    setCachedSub(shop, result)
+    res.json(result)
   } catch (err) {
     console.error('Subscription error:', err)
     res.json({ plan: 'free', active: false })
