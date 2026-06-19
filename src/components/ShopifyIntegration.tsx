@@ -58,7 +58,6 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
           </Text>
         </InlineStack>
 
-        {!loading && products.length > 0 && (
           <div className="w-64">
             <Select
               label="Quick pick a product"
@@ -67,11 +66,10 @@ export default function ShopifyIntegration({ shop, onSelectProduct }: Props) {
               onChange={(v) => {
                 if (v) onSelectProduct(`https://${shop.replace('https://', '')}/products/${v}`)
               }}
-              options={productOptions}
-              placeholder="Quick pick a product..."
+              options={loading ? [] : productOptions}
+              placeholder={loading ? 'Loading products...' : 'Quick pick a product...'}
             />
           </div>
-        )}
       </InlineStack>
     </div>
   )
