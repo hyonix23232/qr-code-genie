@@ -143,12 +143,8 @@ app.get('/auth/callback', async (req, res) => {
 })
 
 app.get('/api/config', (req, res) => {
-  res.json({
-    apiKey: SHOPIFY_API_KEY,
-    appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie',
-    hasBillingVars: !!SHOPIFY_APP_ID && !!SHOPIFY_PARTNER_TOKEN,
-
-  })
+  res.json({ apiKey: SHOPIFY_API_KEY, appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie' })
+})
 })
 
 app.get('/api/products', async (req, res) => {
@@ -172,13 +168,13 @@ app.get('/api/subscription', async (req, res) => {
   const session = await ensureOnlineSession(req)
   if (!session) return res.status(401).json({ error: 'App not installed', debug: 'ensureOnlineSession returned null' })
   if (!SHOPIFY_PARTNER_TOKEN || !SHOPIFY_APP_ID) {
-    return res.json({ plan: 'free', active: false, debug: 'Missing SHOPIFY_PARTNER_TOKEN or SHOPIFY_APP_ID' })
+    return res.json({ plan: 'free', active: false })
   }
   try {
     const client = new shopify.clients.Graphql({ session })
     const shopData = await client.request('{ shop { id } }')
     const shopGid = shopData?.data?.shop?.id
-    if (!shopGid) return res.json({ plan: 'free', active: false, debug: 'No shopGid from Admin API' })
+    if (!shopGid) return res.json({ plan: 'free', active: false })
     const partnerApiUrl = SHOPIFY_ORG_ID
       ? `https://partners.shopify.com/${SHOPIFY_ORG_ID}/api/2026-07/graphql.json`
       : `https://partners.shopify.com/api/unstable/graphql.json`
@@ -195,15 +191,12 @@ app.get('/api/subscription', async (req, res) => {
       }),
     })
     const partnerData = await partnerRes.json()
-    if (partnerData?.errors) {
-      return res.json({ plan: 'free', active: false, debug: 'Partner API error', errors: partnerData.errors })
-    }
     const subscription = partnerData?.data?.activeSubscription
     const isPro = subscription?.items?.some((i) => i.handle == 'pro')
-    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro, debug: 'Partner API success', subscription })
+    res.json({ plan: isPro ? 'pro' : 'free', active: !!isPro })
   } catch (err) {
     console.error('Subscription error:', err)
-    res.json({ plan: 'free', active: false, debug: `Exception: ${err.message}` })
+    res.json({ plan: 'free', active: false })
   }
 })
 

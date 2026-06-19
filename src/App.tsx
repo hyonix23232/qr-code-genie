@@ -85,14 +85,10 @@ export default function App() {
       const token = window.shopify?.idToken ? await window.shopify.idToken() : null
       const headers: Record<string, string> = {}
       if (token) headers['Authorization'] = `Bearer ${token}`
-      try {
-        const r = await fetch(`/api/subscription?shop=${shop}`, { headers })
-        const data = await r.json()
-        console.log('Subscription response:', data)
-        setIsPro(data.active)
-      } catch (e) {
-        console.error('Subscription fetch failed:', e)
-      }
+      fetch(`/api/subscription?shop=${shop}`, { headers })
+        .then((r) => r.json())
+        .then((data) => setIsPro(data.active))
+        .catch(() => {})
     })()
   }, [shop])
 
