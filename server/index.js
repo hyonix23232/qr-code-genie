@@ -16,6 +16,7 @@ const SHOPIFY_APP_ID = process.env.SHOPIFY_APP_ID || process.env.APP_ID
 const SHOPIFY_PARTNER_TOKEN = process.env.SHOPIFY_PARTNER_TOKEN || process.env.PARTNER_API_TOKEN
 const SHOPIFY_ORG_ID = process.env.SHOPIFY_ORG_ID || process.env.ORG_ID
 
+console.log('ENV KEYS:', Object.keys(process.env).sort().join(', '))
 if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET || !SHOPIFY_APP_URL) {
   console.error('Missing required env vars')
   process.exit(1)
