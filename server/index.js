@@ -145,7 +145,6 @@ app.get('/auth/callback', async (req, res) => {
 app.get('/api/config', (req, res) => {
   res.json({ apiKey: SHOPIFY_API_KEY, appHandle: SHOPIFY_APP_HANDLE || 'qr-code-genie' })
 })
-})
 
 app.get('/api/products', async (req, res) => {
   const shop = req.shop || req.query.shop
