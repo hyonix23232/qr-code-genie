@@ -86,6 +86,11 @@ function serveIndex(req, res) {
   if (!fs.existsSync(filePath)) return res.status(500).send('Frontend not built. Run: npm run build')
   let html = fs.readFileSync(filePath, 'utf-8')
   html = html.replace(/__SHOPIFY_API_KEY__/g, SHOPIFY_API_KEY)
+  const shop = req.query.shop
+  const cached = shop ? getCachedSub(shop) : null
+  if (cached) {
+    html = html.replace('</head>', `<script>window.__INITIAL_SUB__ = ${JSON.stringify(cached)};</script></head>`)
+  }
   res.send(html)
 }
 

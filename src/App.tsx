@@ -28,8 +28,9 @@ export default function App() {
   const [cornerStyle, setCornerStyle] = useState<CornerType>('square')
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
-  const [isPro, setIsPro] = useState<boolean | null>(null)
-  const [subLoading, setSubLoading] = useState(true)
+  const initialSub = (window as any).__INITIAL_SUB__
+  const [isPro, setIsPro] = useState<boolean | null>(initialSub?.active ?? null)
+  const [subLoading, setSubLoading] = useState(!initialSub)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
   const [appHandle, setAppHandle] = useState('qr-code-genie')
