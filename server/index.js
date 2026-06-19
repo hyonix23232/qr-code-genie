@@ -176,7 +176,7 @@ app.get('/api/subscription', async (req, res) => {
   }
   try {
     const client = new shopify.clients.Graphql({ session })
-    const shopData = await client.query({ data: '{ shop { id } }' })
+    const shopData = await client.request('{ shop { id } }')
     const shopGid = shopData?.data?.shop?.id
     if (!shopGid) return res.json({ plan: 'free', active: false, debug: 'No shopGid from Admin API' })
     const partnerApiUrl = SHOPIFY_ORG_ID
