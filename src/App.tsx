@@ -29,6 +29,7 @@ export default function App() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
+  const [subLoading, setSubLoading] = useState(true)
   const [isEmbedded, setIsEmbedded] = useState(false)
   const [shop, setShop] = useState('')
   const [appHandle, setAppHandle] = useState('qr-code-genie')
@@ -89,6 +90,7 @@ export default function App() {
         .then((r) => r.json())
         .then((data) => setIsPro(data.active))
         .catch(() => {})
+        .finally(() => setSubLoading(false))
     })()
   }, [shop])
 
@@ -179,7 +181,7 @@ export default function App() {
             />
           )}
 
-          {!isPro && shop && (
+          {!isPro && !subLoading && shop && (
             <Banner tone="info">
               <InlineStack gap="300" blockAlign="center" wrap={false}>
                 <Text as="span" variant="bodyMd">
