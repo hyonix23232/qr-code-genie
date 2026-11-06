@@ -341,6 +341,16 @@ app.get('/privacy', (req, res) => {
 </html>`)
 })
 
+app.get('/api/egress-ip', async (req, res) => {
+  try {
+    const r = await fetch('https://ipify.org')
+    const ip = (await r.text()).trim()
+    res.json({ egressIp: ip, family: ip.includes(':') ? 'IPv6' : 'IPv4', time: new Date().toISOString() })
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch egress IP', detail: e.message })
+  }
+})
+
 app.get('*', serveIndex)
 
 const listenPort = PORT || 3001
